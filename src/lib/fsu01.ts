@@ -1,4 +1,6 @@
-import { saveSingleFormRecord } from "@/lib/form-records";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import { saveSingleFormRecordWithClient } from "@/lib/form-records";
 import {
   validateImageFile,
   validateOperationDate,
@@ -56,7 +58,7 @@ export type Fsu01Input = {
 
 export type EvidenciasInput = Record<EvidenciaKey, File | null>;
 
-const EVIDENCIAS_CONFIG: Record<
+export const EVIDENCIAS_CONFIG: Record<
   EvidenciaKey,
   { fileName: string; column: string }
 > = {
@@ -82,9 +84,16 @@ export async function createFsu01Ingreso(
   input: Fsu01Input,
   evidencias: EvidenciasInput,
 ) {
-  validateFsu01Input(input, evidencias);
-
   const supabase = getSupabaseBrowserClient();
+  return createFsu01IngresoWithClient(supabase, input, evidencias);
+}
+
+export async function createFsu01IngresoWithClient(
+  supabase: SupabaseClient,
+  input: Fsu01Input,
+  evidencias: EvidenciasInput,
+) {
+  validateFsu01Input(input, evidencias);
   const fechaRegistro = normalizeOperationDate(input.fechaRegistro);
   const placa = normalizePlate(input.placa);
 
@@ -126,7 +135,11 @@ export async function createFsu01Ingreso(
     ...uploadedUrls,
   };
 
-  const data = await saveSingleFormRecord("reg_fsu01_ingreso", payload);
+  const data = await saveSingleFormRecordWithClient(
+    supabase,
+    "reg_fsu01_ingreso",
+    payload,
+  );
   await updateOperacionMaestra(nombreOperacion, {
     estado_ingreso: "completo",
     conductor: input.nombreConductor.trim(),
@@ -137,7 +150,7 @@ export async function createFsu01Ingreso(
 }
 
 async function uploadFsu01Evidencias(
-  supabase: ReturnType<typeof getSupabaseBrowserClient>,
+  supabase: SupabaseClient,
   evidenciasFolder: string,
   nombreOperacion: string,
   evidencias: EvidenciasInput,
@@ -165,8 +178,7 @@ async function uploadFsu01Evidencias(
       throw new Error(`No fue posible subir ${config.fileName}: ${error.message}`);
     }
 
-    const { data } = supabase.storage.from(bucketName).getPublicUrl(path);
-    uploaded[config.column] = data.publicUrl;
+    uploaded[config.column] = path;
   }
 
   return uploaded;
@@ -179,7 +191,10 @@ function getFileExtension(fileName: string) {
   return extension && extension !== fileName.toLowerCase() ? extension : "jpg";
 }
 
-function validateFsu01Input(input: Fsu01Input, evidencias: EvidenciasInput) {
+export function validateFsu01Input(
+  input: Fsu01Input,
+  evidencias: EvidenciasInput,
+) {
   validateOperationDate(input.fechaRegistro, "La fecha del registro");
   validatePlate(input.placa);
   validateRequiredText(input.horaRegistro, "La hora del registro");

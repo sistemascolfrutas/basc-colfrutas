@@ -1,3 +1,5 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { buildNombreOperacion, buildOperacionPayload } from "@/lib/operations";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -26,6 +28,13 @@ export async function getOperacionMaestraByNombreOperacion(
   nombreOperacion: string,
 ) {
   const supabase = getSupabaseBrowserClient();
+  return getOperacionMaestraByNombreOperacionWithClient(supabase, nombreOperacion);
+}
+
+export async function getOperacionMaestraByNombreOperacionWithClient(
+  supabase: SupabaseClient,
+  nombreOperacion: string,
+) {
 
   const { data, error } = await supabase
     .from("operaciones_maestra")
@@ -45,9 +54,17 @@ export async function getOperacionMaestraByNombreOperacion(
 export async function getOrCreateOperacionMaestra(
   input: GetOrCreateOperacionInput,
 ) {
+  const supabase = getSupabaseBrowserClient();
+  return getOrCreateOperacionMaestraWithClient(supabase, input);
+}
+
+export async function getOrCreateOperacionMaestraWithClient(
+  supabase: SupabaseClient,
+  input: GetOrCreateOperacionInput,
+) {
   const nombreOperacion = buildNombreOperacion(input.placa, input.fecha);
   const operacionExistente =
-    await getOperacionMaestraByNombreOperacion(nombreOperacion);
+    await getOperacionMaestraByNombreOperacionWithClient(supabase, nombreOperacion);
 
   if (operacionExistente) {
     return {
@@ -56,7 +73,6 @@ export async function getOrCreateOperacionMaestra(
     };
   }
 
-  const supabase = getSupabaseBrowserClient();
   const payload = buildOperacionPayload(input);
 
   const { data, error } = await supabase

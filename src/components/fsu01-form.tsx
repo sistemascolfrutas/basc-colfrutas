@@ -15,7 +15,6 @@ import {
 } from "@/components/form-ui";
 import { clearDraft, loadDraft, saveDraft } from "@/lib/drafts";
 import {
-  createFsu01Ingreso,
   type EvidenciasInput,
   type Fsu01Input,
   TIPO_OPERACION_OPTIONS,
@@ -99,7 +98,7 @@ export function Fsu01Form() {
 
     startTransition(async () => {
       try {
-        const data = await createFsu01Ingreso(form, files);
+        const data = await submitFsu01(form, files);
         setSavedRecord(data);
         setMessage(
           "F-SU-01 guardado correctamente. La operacion maestra quedo actualizada.",
@@ -350,4 +349,41 @@ export function Fsu01Form() {
       />
     </div>
   );
+}
+
+async function submitFsu01(form: Fsu01Input, files: EvidenciasInput) {
+  const payload = new FormData();
+  payload.set("fechaRegistro", form.fechaRegistro);
+  payload.set("horaRegistro", form.horaRegistro);
+  payload.set("tipoOperacion", form.tipoOperacion);
+  payload.set("tipoOperacionOtro", form.tipoOperacionOtro);
+  payload.set("placa", form.placa);
+  payload.set("tipoVehiculo", form.tipoVehiculo);
+  payload.set("empresaTransportadora", form.empresaTransportadora);
+  payload.set("origen", form.origen);
+  payload.set("destino", form.destino);
+  payload.set("nombreConductor", form.nombreConductor);
+  payload.set("numeroCedula", form.numeroCedula);
+  payload.set("validacionVisualIngreso", String(form.validacionVisualIngreso));
+  payload.set("autorizaIngreso", String(form.autorizaIngreso));
+  payload.set("responsable", form.responsable);
+  payload.set("observaciones", form.observaciones);
+
+  for (const [key, file] of Object.entries(files)) {
+    if (file) {
+      payload.set(key, file);
+    }
+  }
+
+  const response = await fetch("/api/fsu-01", {
+    method: "POST",
+    body: payload,
+  });
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || "No fue posible guardar el formulario.");
+  }
+
+  return result as Record<string, unknown>;
 }

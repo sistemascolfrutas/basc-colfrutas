@@ -15,7 +15,6 @@ import {
 } from "@/components/form-ui";
 import { clearDraft, loadDraft, saveDraft } from "@/lib/drafts";
 import {
-  createFsu03Cargue,
   type EvidenciasFsu03Input,
   type Fsu03Input,
   PARTICIPANTE_OPTIONS,
@@ -91,7 +90,7 @@ export function Fsu03Form() {
 
     startTransition(async () => {
       try {
-        const data = await createFsu03Cargue(form, files);
+        const data = await submitFsu03(form, files);
         setSavedRecord(data);
         setMessage(
           "F-SU-03 guardado correctamente. La operacion maestra quedo actualizada.",
@@ -296,4 +295,30 @@ export function Fsu03Form() {
       />
     </div>
   );
+}
+
+async function submitFsu03(form: Fsu03Input, files: EvidenciasFsu03Input) {
+  const payload = new FormData();
+
+  for (const [key, value] of Object.entries(form)) {
+    payload.set(key, String(value ?? ""));
+  }
+
+  for (const [key, file] of Object.entries(files)) {
+    if (file) {
+      payload.set(key, file);
+    }
+  }
+
+  const response = await fetch("/api/fsu-03", {
+    method: "POST",
+    body: payload,
+  });
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || "No fue posible guardar el formulario.");
+  }
+
+  return result as Record<string, unknown>;
 }

@@ -1,3 +1,5 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import type { OperacionEstado } from "@/lib/operations";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -15,6 +17,14 @@ export async function updateOperacionMaestra(
   patch: OperacionStatusPatch,
 ) {
   const supabase = getSupabaseBrowserClient();
+  return updateOperacionMaestraWithClient(supabase, nombreOperacion, patch);
+}
+
+export async function updateOperacionMaestraWithClient(
+  supabase: SupabaseClient,
+  nombreOperacion: string,
+  patch: OperacionStatusPatch,
+) {
   const { error } = await supabase
     .from("operaciones_maestra")
     .update(patch)

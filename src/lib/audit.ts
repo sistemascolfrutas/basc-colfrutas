@@ -1,3 +1,5 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { normalizeOperationDate, normalizePlate } from "@/lib/operations";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
@@ -35,6 +37,16 @@ export async function searchOperaciones(filters: {
   fecha?: string;
 }) {
   const supabase = getSupabaseBrowserClient();
+  return searchOperacionesWithClient(supabase, filters);
+}
+
+export async function searchOperacionesWithClient(
+  supabase: SupabaseClient,
+  filters: {
+    placa?: string;
+    fecha?: string;
+  },
+) {
   let query = supabase
     .from("operaciones_maestra")
     .select("*")
@@ -60,7 +72,13 @@ export async function searchOperaciones(filters: {
 
 export async function getOperacionAuditDetail(nombreOperacion: string) {
   const supabase = getSupabaseBrowserClient();
+  return getOperacionAuditDetailWithClient(supabase, nombreOperacion);
+}
 
+export async function getOperacionAuditDetailWithClient(
+  supabase: SupabaseClient,
+  nombreOperacion: string,
+) {
   const [operacionRes, fsu01Res, fsu02Res, fsu03Res] = await Promise.all([
     supabase
       .from("operaciones_maestra")

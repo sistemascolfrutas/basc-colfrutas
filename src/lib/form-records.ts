@@ -1,3 +1,5 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export async function saveSingleFormRecord(
@@ -5,6 +7,14 @@ export async function saveSingleFormRecord(
   payload: Record<string, unknown>,
 ) {
   const supabase = getSupabaseBrowserClient();
+  return saveSingleFormRecordWithClient(supabase, table, payload);
+}
+
+export async function saveSingleFormRecordWithClient(
+  supabase: SupabaseClient,
+  table: string,
+  payload: Record<string, unknown>,
+) {
   const nombreOperacion = String(payload.nombre_operacion ?? "");
 
   const existing = await supabase

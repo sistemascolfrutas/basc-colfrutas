@@ -16,7 +16,6 @@ import {
 import { clearDraft, loadDraft, saveDraft } from "@/lib/drafts";
 import {
   CHECK_OPTIONS,
-  createFsu02Inspeccion,
   type EvidenciasFsu02Input,
   type Fsu02Input,
   RESULTADO_INSPECCION_OPTIONS,
@@ -139,7 +138,7 @@ export function Fsu02Form() {
 
     startTransition(async () => {
       try {
-        const data = await createFsu02Inspeccion(form, files);
+        const data = await submitFsu02(form, files);
         setSavedRecord(data);
         setMessage(
           "F-SU-02 guardado correctamente. La operacion maestra quedo actualizada.",
@@ -397,4 +396,30 @@ export function Fsu02Form() {
       />
     </div>
   );
+}
+
+async function submitFsu02(form: Fsu02Input, files: EvidenciasFsu02Input) {
+  const payload = new FormData();
+
+  for (const [key, value] of Object.entries(form)) {
+    payload.set(key, String(value ?? ""));
+  }
+
+  for (const [key, file] of Object.entries(files)) {
+    if (file) {
+      payload.set(key, file);
+    }
+  }
+
+  const response = await fetch("/api/fsu-02", {
+    method: "POST",
+    body: payload,
+  });
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || "No fue posible guardar el formulario.");
+  }
+
+  return result as Record<string, unknown>;
 }

@@ -5,8 +5,6 @@ import { useState, useTransition } from "react";
 
 import { generateAuditPdf } from "@/lib/audit-report";
 import {
-  getOperacionAuditDetail,
-  searchOperaciones,
   type AuditDetail,
   type AuditEvidence,
   type OperacionMaestraAudit,
@@ -31,7 +29,7 @@ export function AuditDashboard() {
 
     startTransition(async () => {
       try {
-        const data = await searchOperaciones({ placa, fecha });
+        const data = await searchOperacionesRequest({ placa, fecha });
         setResults(data);
         setSelected(null);
         setSearchMessage(
@@ -52,7 +50,7 @@ export function AuditDashboard() {
 
     startTransition(async () => {
       try {
-        const detail = await getOperacionAuditDetail(nombreOperacion);
+        const detail = await getOperacionAuditDetailRequest(nombreOperacion);
         setSelected(detail);
       } catch (error) {
         setErrorMessage(
@@ -225,6 +223,43 @@ export function AuditDashboard() {
       ) : null}
     </div>
   );
+}
+
+async function searchOperacionesRequest(filters: {
+  placa?: string;
+  fecha?: string;
+}) {
+  const response = await fetch("/api/audit/search", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(filters),
+  });
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || "No fue posible consultar.");
+  }
+
+  return result as OperacionMaestraAudit[];
+}
+
+async function getOperacionAuditDetailRequest(nombreOperacion: string) {
+  const response = await fetch(
+    `/api/audit/${encodeURIComponent(nombreOperacion)}`,
+    {
+      method: "GET",
+      cache: "no-store",
+    },
+  );
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || "No fue posible cargar el detalle.");
+  }
+
+  return result as AuditDetail;
 }
 
 function DetailCard({
