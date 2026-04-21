@@ -77,7 +77,7 @@ export function AuditDashboard() {
                 Consulta de operaciones y evidencias
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Busca por placas o fechas y revisa en una sola vista el estado de la
+                Busca por placa o fecha y revisa en una sola vista el estado de la
                 operacion, los formularios cargados y sus evidencias.
               </p>
             </div>
