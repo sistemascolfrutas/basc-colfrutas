@@ -5,8 +5,15 @@ export function createAdminClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !serviceRoleKey) {
+    const missing = [
+      !supabaseUrl ? "NEXT_PUBLIC_SUPABASE_URL" : null,
+      !serviceRoleKey ? "SUPABASE_SERVICE_ROLE_KEY" : null,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
     throw new Error(
-      "Faltan NEXT_PUBLIC_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en el entorno.",
+      `Faltan variables de entorno del servidor: ${missing}. VERCEL_ENV=${process.env.VERCEL_ENV ?? "desconocido"}.`,
     );
   }
 
