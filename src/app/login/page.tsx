@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { isAuthorizedUser } from "@/lib/auth";
+import { getAppUserByAuthUserWithClient } from "@/lib/app-users";
 import { createClient } from "@/lib/supabase/server";
 
 import { login } from "./actions";
@@ -15,11 +15,12 @@ export default async function LoginPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (isAuthorizedUser(user)) {
-    redirect("/");
-  }
-
   if (user) {
+    const appUser = await getAppUserByAuthUserWithClient(supabase, user);
+    if (appUser) {
+      redirect("/");
+    }
+
     await supabase.auth.signOut();
   }
 

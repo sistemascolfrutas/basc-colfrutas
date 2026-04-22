@@ -3,13 +3,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { saveSingleFormRecordWithClient } from "@/lib/form-records";
 import {
   validateImageFile,
+  validateOneOf,
   validateOperationDate,
   validatePlate,
   validateRequiredBoolean,
   validateRequiredText,
 } from "@/lib/form-validation";
-import { updateOperacionMaestra } from "@/lib/operacion-status";
-import { getOrCreateOperacionMaestra } from "@/lib/operaciones-maestra";
+import { updateOperacionMaestraWithClient } from "@/lib/operacion-status";
+import { getOrCreateOperacionMaestraWithClient } from "@/lib/operaciones-maestra";
 import {
   buildNombreOperacion,
   normalizeOperationDate,
@@ -108,7 +109,7 @@ export async function createFsu02InspeccionWithClient(
   const fechaInspeccion = normalizeOperationDate(input.fechaInspeccion);
   const placa = normalizePlate(input.placa);
 
-  const operacion = await getOrCreateOperacionMaestra({
+  const operacion = await getOrCreateOperacionMaestraWithClient(supabase, {
     placa,
     fecha: fechaInspeccion,
   });
@@ -161,7 +162,7 @@ export async function createFsu02InspeccionWithClient(
     "reg_fsu02_inspeccion",
     payload,
   );
-  await updateOperacionMaestra(nombreOperacion, {
+  await updateOperacionMaestraWithClient(supabase, nombreOperacion, {
     estado_inspeccion: "completo",
   });
 
@@ -228,8 +229,9 @@ export function validateFsu02Input(
     input.numeroRemolqueContenedor,
     "El numero de remolque o contenedor",
   );
-  validateRequiredText(
+  validateOneOf(
     input.resultadoFinalInspeccion,
+    RESULTADO_INSPECCION_OPTIONS,
     "El resultado final de la inspeccion",
   );
   validateRequiredText(
@@ -271,7 +273,7 @@ export function validateFsu02Input(
       input.condicionAptaParaProductoATransportar,
     ],
   ] as const) {
-    validateRequiredText(value, label);
+    validateOneOf(value, CHECK_OPTIONS, label);
   }
 
   if (input.seDetectoNovedad) {

@@ -15,11 +15,23 @@ export function validateOperationDate(value: string, label: string) {
     throw new Error(`${label} debe tener el formato AAAA-MM-DD.`);
   }
 
-  const selected = new Date(`${value}T00:00:00`);
+  const [yearText, monthText, dayText] = value.split("-");
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const selected = new Date(year, month - 1, day);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   if (Number.isNaN(selected.getTime())) {
+    throw new Error(`${label} no es una fecha valida.`);
+  }
+
+  if (
+    selected.getFullYear() !== year ||
+    selected.getMonth() !== month - 1 ||
+    selected.getDate() !== day
+  ) {
     throw new Error(`${label} no es una fecha valida.`);
   }
 
@@ -50,6 +62,18 @@ export function validatePlate(placa: string) {
 export function validateRequiredText(value: string, label: string) {
   if (!value.trim()) {
     throw new Error(`${label} es obligatorio.`);
+  }
+}
+
+export function validateOneOf<T extends string>(
+  value: string,
+  allowedValues: readonly T[],
+  label: string,
+) {
+  validateRequiredText(value, label);
+
+  if (!allowedValues.includes(value as T)) {
+    throw new Error(`${label} tiene un valor no permitido.`);
   }
 }
 

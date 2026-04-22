@@ -46,11 +46,11 @@ export async function createSignedEvidenceUrl(
     return value;
   }
 
-  if (isAbsoluteUrl(value) && !value.includes(`/storage/v1/object/public/${BUCKET_NAME}/`)) {
-    return value;
+  const path = extractStoragePath(value);
+  if (!path || isAbsoluteUrl(path)) {
+    throw new Error("La ruta de evidencia es invalida.");
   }
 
-  const path = extractStoragePath(value);
   const { data, error } = await supabase.storage
     .from(BUCKET_NAME)
     .createSignedUrl(path, expiresIn);

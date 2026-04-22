@@ -3,14 +3,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { saveSingleFormRecordWithClient } from "@/lib/form-records";
 import {
   validateImageFile,
+  validateOneOf,
   validateOperationDate,
   validatePlate,
   validateRequiredBoolean,
   validateRequiredText,
   validateUniqueSelections,
 } from "@/lib/form-validation";
-import { updateOperacionMaestra } from "@/lib/operacion-status";
-import { getOrCreateOperacionMaestra } from "@/lib/operaciones-maestra";
+import { updateOperacionMaestraWithClient } from "@/lib/operacion-status";
+import { getOrCreateOperacionMaestraWithClient } from "@/lib/operaciones-maestra";
 import {
   buildNombreOperacion,
   normalizeOperationDate,
@@ -90,7 +91,7 @@ export async function createFsu03CargueWithClient(
   const fechaCargue = normalizeOperationDate(input.fechaCargue);
   const placa = normalizePlate(input.placa);
 
-  const operacion = await getOrCreateOperacionMaestra({
+  const operacion = await getOrCreateOperacionMaestraWithClient(supabase, {
     placa,
     fecha: fechaCargue,
   });
@@ -123,7 +124,7 @@ export async function createFsu03CargueWithClient(
     "reg_fsu03_cargue_aseguramiento",
     payload,
   );
-  await updateOperacionMaestra(nombreOperacion, {
+  await updateOperacionMaestraWithClient(supabase, nombreOperacion, {
     estado_cargue: "completo",
   });
 
@@ -183,9 +184,9 @@ export function validateFsu03Input(
     input.observacionesCargue,
     "Las observaciones del cargue",
   );
-  validateRequiredText(input.participante1, "El participante 1");
-  validateRequiredText(input.participante2, "El participante 2");
-  validateRequiredText(input.participante3, "El participante 3");
+  validateOneOf(input.participante1, PARTICIPANTE_OPTIONS, "El participante 1");
+  validateOneOf(input.participante2, PARTICIPANTE_OPTIONS, "El participante 2");
+  validateOneOf(input.participante3, PARTICIPANTE_OPTIONS, "El participante 3");
   validateUniqueSelections(
     [input.participante1, input.participante2, input.participante3],
     "La seleccion de participantes",

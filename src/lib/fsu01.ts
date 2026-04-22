@@ -3,13 +3,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { saveSingleFormRecordWithClient } from "@/lib/form-records";
 import {
   validateImageFile,
+  validateOneOf,
   validateOperationDate,
   validatePlate,
   validateRequiredBoolean,
   validateRequiredText,
 } from "@/lib/form-validation";
-import { updateOperacionMaestra } from "@/lib/operacion-status";
-import { getOrCreateOperacionMaestra } from "@/lib/operaciones-maestra";
+import { updateOperacionMaestraWithClient } from "@/lib/operacion-status";
+import { getOrCreateOperacionMaestraWithClient } from "@/lib/operaciones-maestra";
 import {
   buildNombreOperacion,
   normalizeOperationDate,
@@ -97,7 +98,7 @@ export async function createFsu01IngresoWithClient(
   const fechaRegistro = normalizeOperationDate(input.fechaRegistro);
   const placa = normalizePlate(input.placa);
 
-  const operacion = await getOrCreateOperacionMaestra({
+  const operacion = await getOrCreateOperacionMaestraWithClient(supabase, {
     placa,
     fecha: fechaRegistro,
     conductor: input.nombreConductor,
@@ -140,7 +141,7 @@ export async function createFsu01IngresoWithClient(
     "reg_fsu01_ingreso",
     payload,
   );
-  await updateOperacionMaestra(nombreOperacion, {
+  await updateOperacionMaestraWithClient(supabase, nombreOperacion, {
     estado_ingreso: "completo",
     conductor: input.nombreConductor.trim(),
     empresa_transportadora: input.empresaTransportadora.trim(),
@@ -198,8 +199,16 @@ export function validateFsu01Input(
   validateOperationDate(input.fechaRegistro, "La fecha del registro");
   validatePlate(input.placa);
   validateRequiredText(input.horaRegistro, "La hora del registro");
-  validateRequiredText(input.tipoOperacion, "El tipo de operacion");
-  validateRequiredText(input.tipoVehiculo, "El tipo de vehiculo");
+  validateOneOf(
+    input.tipoOperacion,
+    TIPO_OPERACION_OPTIONS,
+    "El tipo de operacion",
+  );
+  validateOneOf(
+    input.tipoVehiculo,
+    TIPO_VEHICULO_OPTIONS,
+    "El tipo de vehiculo",
+  );
   validateRequiredText(
     input.empresaTransportadora,
     "La empresa transportadora",

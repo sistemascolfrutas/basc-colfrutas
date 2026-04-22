@@ -1,10 +1,24 @@
 import { NextResponse } from "next/server";
 
 import { createFsu02InspeccionWithClient, type EvidenciasFsu02Input, type Fsu02Input } from "@/lib/fsu02";
+import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
 import { getAuthorizedServerClient } from "@/lib/server-auth";
 
 export async function POST(request: Request) {
-  const { errorResponse, supabase } = await getAuthorizedServerClient();
+  const rateLimit = consumeRateLimit(`api:fsu02:${getClientIp(request.headers)}`, {
+    limit: 20,
+    windowMs: 5 * 60 * 1000,
+  });
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      {
+        error: `Demasiadas solicitudes. Intenta de nuevo en ${rateLimit.retryAfterSeconds} segundos.`,
+      },
+      { status: 429 },
+    );
+  }
+
+  const { errorResponse, supabase } = await getAuthorizedServerClient("fsu02");
   if (errorResponse || !supabase) {
     return errorResponse;
   }

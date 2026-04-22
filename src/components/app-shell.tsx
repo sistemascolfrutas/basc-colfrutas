@@ -5,20 +5,23 @@ import { usePathname } from "next/navigation";
 
 import { LogoutButton } from "@/components/logout-button";
 
-const navItems = [
-  { href: "/", label: "Inicio" },
-  { href: "/fsu-01", label: "F-SU-01" },
-  { href: "/fsu-02", label: "F-SU-02" },
-  { href: "/fsu-03", label: "F-SU-03" },
-  { href: "/auditoria", label: "Auditoria" },
-];
+type NavItem = {
+  href: string;
+  label: string;
+};
 
 export function AppShell({
   children,
+  navItems,
   userEmail,
+  userName,
+  userRole,
 }: {
   children: React.ReactNode;
+  navItems: NavItem[];
   userEmail: string;
+  userName: string | null;
+  userRole: string;
 }) {
   const pathname = usePathname();
 
@@ -67,7 +70,10 @@ export function AppShell({
                 <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
                   Usuario activo
                 </p>
-                <p className="text-sm font-medium text-slate-700">{userEmail}</p>
+                <p className="text-sm font-medium text-slate-700">
+                  {userName || userEmail}
+                </p>
+                <p className="text-xs text-slate-500">{userRole}</p>
               </div>
               <LogoutButton />
             </div>
@@ -103,8 +109,9 @@ export function AppShell({
                   Usuario activo
                 </p>
                 <p className="truncate text-sm font-medium text-slate-700">
-                  {userEmail}
+                  {userName || userEmail}
                 </p>
+                <p className="truncate text-xs text-slate-500">{userRole}</p>
               </div>
               <LogoutButton />
             </div>

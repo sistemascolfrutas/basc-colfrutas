@@ -1,29 +1,47 @@
 import Link from "next/link";
 
+import { hasPermission } from "@/lib/app-users";
+import { requireAuthorizedPageUser } from "@/lib/server-auth";
+
 const actions = [
   {
     href: "/fsu-01",
     title: "F-SU-01 Ingreso",
     description: "Registrar ingreso del vehiculo y cargar evidencias iniciales.",
+    permission: "fsu01" as const,
   },
   {
     href: "/fsu-02",
     title: "F-SU-02 Inspeccion",
     description: "Registrar inspeccion fisica e inocuidad de la unidad de carga.",
+    permission: "fsu02" as const,
   },
   {
     href: "/fsu-03",
     title: "F-SU-03 Cargue",
     description: "Registrar documento soporte, participantes y avance del cargue.",
+    permission: "fsu03" as const,
   },
   {
     href: "/auditoria",
     title: "Auditoria",
     description: "Buscar operaciones por placa o fecha y revisar formularios y evidencias.",
+    permission: "audit" as const,
+  },
+  {
+    href: "/admin/usuarios",
+    title: "Usuarios",
+    description: "Crear usuarios, activar o desactivar accesos y asignar formularios.",
+    permission: "user_admin" as const,
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const { appUser } = await requireAuthorizedPageUser();
+  const visibleActions = actions.filter((action) =>
+    hasPermission(appUser, action.permission),
+  );
+
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,_#f5f7f3_0%,_#eef6f0_55%,_#f8fafc_100%)]">
       <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 md:px-10 md:py-14">
@@ -41,7 +59,7 @@ export default function Home() {
         </section>
 
         <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {actions.map((action) => (
+          {visibleActions.map((action) => (
             <Link
               key={action.href}
               href={action.href}
