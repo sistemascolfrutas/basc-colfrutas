@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import {
   BooleanField,
@@ -16,7 +16,6 @@ import {
 import {
   type EvidenciasFsu03Input,
   type Fsu03Input,
-  PARTICIPANTE_OPTIONS,
 } from "@/lib/fsu03";
 import {
   buildNombreOperacion,
@@ -45,12 +44,39 @@ const initialFiles: EvidenciasFsu03Input = {
 export function Fsu03Form() {
   const [form, setForm] = useState<Fsu03Input>(initialForm);
   const [files, setFiles] = useState(initialFiles);
+  const [participantOptions, setParticipantOptions] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savedRecord, setSavedRecord] = useState<Record<string, unknown> | null>(
     null,
   );
+
+  useEffect(() => {
+    let active = true;
+
+    void (async () => {
+      try {
+        const options = await loadParticipantOptions();
+        if (active) {
+          setParticipantOptions(options);
+          setErrorMessage(null);
+        }
+      } catch (error) {
+        if (active) {
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : "No fue posible cargar participantes F-SU-03.",
+          );
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const normalizedPlate = normalizePlate(form.placa);
   const normalizedDate = normalizeOperationDate(form.fechaCargue);
@@ -211,24 +237,27 @@ export function Fsu03Form() {
                 label="Participante 1"
                 value={form.participante1}
                 onChange={(value) => setField("participante1", value)}
-                options={PARTICIPANTE_OPTIONS}
+                options={participantOptions}
                 required
+                disabled={participantOptions.length === 0}
                 tone="rose"
               />
               <SelectField
                 label="Participante 2"
                 value={form.participante2}
                 onChange={(value) => setField("participante2", value)}
-                options={PARTICIPANTE_OPTIONS}
+                options={participantOptions}
                 required
+                disabled={participantOptions.length === 0}
                 tone="rose"
               />
               <SelectField
                 label="Participante 3"
                 value={form.participante3}
                 onChange={(value) => setField("participante3", value)}
-                options={PARTICIPANTE_OPTIONS}
+                options={participantOptions}
                 required
+                disabled={participantOptions.length === 0}
                 tone="rose"
               />
             </div>
@@ -264,16 +293,18 @@ export function Fsu03Form() {
 
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || participantOptions.length === 0}
               className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-slate-400"
             >
               {isPending ? "Guardando F-SU-03..." : "Guardar F-SU-03"}
             </button>
 
-            <p className="text-xs text-slate-500">
-              Los campos se guardan temporalmente en este dispositivo. Las fotos
-              deben volver a seleccionarse si la pagina se recarga.
-            </p>
+            {participantOptions.length === 0 ? (
+              <p className="text-xs text-rose-600">
+                No hay participantes activos para elegir. Solicita al administrador
+                configurar el catalogo de F-SU-03.
+              </p>
+            ) : null}
           </form>
         </div>
       </main>
@@ -311,4 +342,19 @@ async function submitFsu03(form: Fsu03Input, files: EvidenciasFsu03Input) {
   }
 
   return result as Record<string, unknown>;
+}
+
+async function loadParticipantOptions() {
+  const response = await fetch("/api/fsu03-participants", {
+    cache: "no-store",
+  });
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result.error || "No fue posible cargar participantes F-SU-03.",
+    );
+  }
+
+  return result as string[];
 }

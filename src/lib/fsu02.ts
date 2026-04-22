@@ -10,7 +10,7 @@ import {
   validateRequiredText,
 } from "@/lib/form-validation";
 import { updateOperacionMaestraWithClient } from "@/lib/operacion-status";
-import { getOrCreateOperacionMaestraWithClient } from "@/lib/operaciones-maestra";
+import { requireOperacionIngresoWithClient } from "@/lib/operaciones-maestra";
 import {
   buildNombreOperacion,
   normalizeOperationDate,
@@ -109,14 +109,14 @@ export async function createFsu02InspeccionWithClient(
   const fechaInspeccion = normalizeOperationDate(input.fechaInspeccion);
   const placa = normalizePlate(input.placa);
 
-  const operacion = await getOrCreateOperacionMaestraWithClient(supabase, {
+  const operacion = await requireOperacionIngresoWithClient(supabase, {
     placa,
     fecha: fechaInspeccion,
   });
 
   const nombreOperacion = buildNombreOperacion(placa, fechaInspeccion);
   const evidenciasFolder =
-    operacion.data.ruta_evidencias_folder ?? `evidencias/${nombreOperacion}`;
+    operacion.ruta_evidencias_folder ?? `evidencias/${nombreOperacion}`;
 
   const uploadedUrls = await uploadFsu02Evidencias(
     supabase,

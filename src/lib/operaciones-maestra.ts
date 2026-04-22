@@ -17,6 +17,8 @@ type OperacionMaestraRecord = {
   ruta_evidencias_folder: string | null;
 };
 
+export type { OperacionMaestraRecord };
+
 type GetOrCreateOperacionInput = {
   placa: string;
   fecha: string;
@@ -91,4 +93,21 @@ export async function getOrCreateOperacionMaestraWithClient(
     data,
     created: true,
   };
+}
+
+export async function requireOperacionIngresoWithClient(
+  supabase: SupabaseClient,
+  input: Pick<GetOrCreateOperacionInput, "placa" | "fecha">,
+) {
+  const nombreOperacion = buildNombreOperacion(input.placa, input.fecha);
+  const operacion =
+    await getOperacionMaestraByNombreOperacionWithClient(supabase, nombreOperacion);
+
+  if (!operacion || operacion.estado_ingreso !== "completo") {
+    throw new Error(
+      "No encontramos un F-SU-01 registrado con esa placa y fecha. Verifica la placa o corrigela antes de continuar.",
+    );
+  }
+
+  return operacion;
 }
