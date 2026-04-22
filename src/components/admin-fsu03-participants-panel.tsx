@@ -7,13 +7,11 @@ import type { Fsu03ParticipantRecord } from "@/lib/fsu03-participants";
 type ParticipantFormState = {
   nombre: string;
   isActive: boolean;
-  sortOrder: number;
 };
 
 const initialForm: ParticipantFormState = {
   nombre: "",
   isActive: true,
-  sortOrder: 0,
 };
 
 export function AdminFsu03ParticipantsPanel() {
@@ -50,7 +48,6 @@ export function AdminFsu03ParticipantsPanel() {
     setForm({
       nombre: participant.nombre,
       isActive: participant.is_active,
-      sortOrder: participant.sort_order,
     });
     setMessage(null);
     setErrorMessage(null);
@@ -66,7 +63,6 @@ export function AdminFsu03ParticipantsPanel() {
         const payload = {
           nombre: form.nombre,
           isActive: form.isActive,
-          sortOrder: form.sortOrder,
         };
 
         if (editingId) {
@@ -143,18 +139,6 @@ export function AdminFsu03ParticipantsPanel() {
                 label="Nombre"
                 value={form.nombre}
                 onChange={(value) => setForm((current) => ({ ...current, nombre: value }))}
-                required
-              />
-              <Field
-                label="Orden"
-                value={String(form.sortOrder)}
-                onChange={(value) =>
-                  setForm((current) => ({
-                    ...current,
-                    sortOrder: Number.parseInt(value || "0", 10) || 0,
-                  }))
-                }
-                type="number"
                 required
               />
 
@@ -237,10 +221,7 @@ export function AdminFsu03ParticipantsPanel() {
                   >
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-rose-300">
-                          Orden {participant.sort_order}
-                        </p>
-                        <h3 className="mt-2 text-lg font-semibold text-white">
+                        <h3 className="text-lg font-semibold text-white">
                           {participant.nombre}
                         </h3>
                       </div>

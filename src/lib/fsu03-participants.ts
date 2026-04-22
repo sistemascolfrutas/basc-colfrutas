@@ -6,7 +6,6 @@ export type Fsu03ParticipantRecord = {
   id: string;
   nombre: string;
   is_active: boolean;
-  sort_order: number;
   created_at: string;
   updated_at: string;
 };
@@ -16,7 +15,6 @@ type Fsu03ParticipantRow = Fsu03ParticipantRecord;
 export type Fsu03ParticipantInput = {
   nombre: string;
   isActive: boolean;
-  sortOrder: number;
 };
 
 export function mapFsu03ParticipantRow(
@@ -37,9 +35,6 @@ export function validateFsu03ParticipantInput(input: Fsu03ParticipantInput) {
   return {
     nombre,
     is_active: Boolean(input.isActive),
-    sort_order: Number.isFinite(input.sortOrder)
-      ? Math.max(0, Math.trunc(input.sortOrder))
-      : 0,
   };
 }
 
@@ -50,7 +45,7 @@ export async function listFsu03ParticipantsWithClient(
   let query = supabase
     .from(FSU03_PARTICIPANTS_TABLE)
     .select("*")
-    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true })
     .order("nombre", { ascending: true });
 
   if (options?.onlyActive) {
