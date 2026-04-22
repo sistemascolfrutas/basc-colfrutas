@@ -298,6 +298,7 @@ export function FileField({
       <input
         type="file"
         accept="image/*"
+        capture="environment"
         disabled={disabled}
         onChange={(event) => onChange(event.target.files?.[0] ?? null)}
         className="text-sm text-slate-600 file:mr-4 file:rounded-full file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white disabled:cursor-not-allowed"
