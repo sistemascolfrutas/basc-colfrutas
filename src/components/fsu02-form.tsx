@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 
 import {
   BooleanField,
@@ -13,7 +13,6 @@ import {
   SelectField,
   TextAreaField,
 } from "@/components/form-ui";
-import { clearDraft, loadDraft, saveDraft } from "@/lib/drafts";
 import {
   CHECK_OPTIONS,
   type EvidenciasFsu02Input,
@@ -25,8 +24,6 @@ import {
   normalizeOperationDate,
   normalizePlate,
 } from "@/lib/operations";
-
-const DRAFT_KEY = "colfrutas-basc-fsu02-draft";
 
 const initialForm: Fsu02Input = {
   fechaInspeccion: "",
@@ -94,9 +91,7 @@ const checkFields: Array<{ key: keyof Fsu02Input; label: string }> = [
 ];
 
 export function Fsu02Form() {
-  const [form, setForm] = useState<Fsu02Input>(() =>
-    loadDraft(DRAFT_KEY, initialForm),
-  );
+  const [form, setForm] = useState<Fsu02Input>(initialForm);
   const [files, setFiles] = useState(initialFiles);
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
@@ -104,10 +99,6 @@ export function Fsu02Form() {
   const [savedRecord, setSavedRecord] = useState<Record<string, unknown> | null>(
     null,
   );
-
-  useEffect(() => {
-    saveDraft(DRAFT_KEY, form);
-  }, [form]);
 
   const normalizedPlate = normalizePlate(form.placa);
   const normalizedDate = normalizeOperationDate(form.fechaInspeccion);
@@ -145,7 +136,6 @@ export function Fsu02Form() {
         );
         setForm(initialForm);
         setFiles(initialFiles);
-        clearDraft(DRAFT_KEY);
       } catch (error) {
         setErrorMessage(
           error instanceof Error
