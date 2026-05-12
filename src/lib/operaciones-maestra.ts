@@ -111,3 +111,20 @@ export async function requireOperacionIngresoWithClient(
 
   return operacion;
 }
+
+export async function requireOperacionCargueWithClient(
+  supabase: SupabaseClient,
+  input: Pick<GetOrCreateOperacionInput, "placa" | "fecha">,
+) {
+  const nombreOperacion = buildNombreOperacion(input.placa, input.fecha);
+  const operacion =
+    await getOperacionMaestraByNombreOperacionWithClient(supabase, nombreOperacion);
+
+  if (!operacion || operacion.estado_cargue !== "completo") {
+    throw new Error(
+      "No encontramos un F-SU-03 completo con esa placa y fecha. Verifica la placa o completa el cargue antes de registrar la salida.",
+    );
+  }
+
+  return operacion;
+}

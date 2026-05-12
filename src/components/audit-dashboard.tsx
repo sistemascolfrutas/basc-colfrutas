@@ -341,10 +341,11 @@ function DetailCard({
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-3">
+      <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         <FormStatusCard title="F-SU-01" record={detail.fsu01} />
         <FormStatusCard title="F-SU-02" record={detail.fsu02} />
         <FormStatusCard title="F-SU-03" record={detail.fsu03} />
+        <FormStatusCard title="F-SU-04" record={detail.fsu04} />
       </section>
 
       <section className="rounded-[2rem] bg-slate-950 p-6 text-slate-100 shadow-[0_25px_80px_rgba(2,6,23,0.28)]">
@@ -359,7 +360,7 @@ function DetailCard({
           </div>
         ) : (
           <div className="mt-6 space-y-6">
-            {(["F-SU-01", "F-SU-02", "F-SU-03"] as const).map((group) => {
+            {(["F-SU-01", "F-SU-02", "F-SU-03", "F-SU-04"] as const).map((group) => {
               const items = evidencias.filter((evidence) => evidence.group === group);
 
               if (items.length === 0) {
@@ -401,6 +402,7 @@ function collectEvidencias(detail: AuditDetail) {
     ...mapEvidenceGroup("F-SU-01", detail.fsu01),
     ...mapEvidenceGroup("F-SU-02", detail.fsu02),
     ...mapEvidenceGroup("F-SU-03", detail.fsu03),
+    ...mapEvidenceGroup("F-SU-04", detail.fsu04),
   ];
 }
 

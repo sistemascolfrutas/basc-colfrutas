@@ -38,11 +38,12 @@ export async function generateAuditPdf(detail: AuditDetail) {
   y = addFormSummary(doc, "F-SU-01", detail.fsu01, y, margin, contentWidth);
   y = addFormSummary(doc, "F-SU-02", detail.fsu02, y, margin, contentWidth);
   y = addFormSummary(doc, "F-SU-03", detail.fsu03, y, margin, contentWidth);
+  y = addFormSummary(doc, "F-SU-04", detail.fsu04, y, margin, contentWidth);
 
   const evidencias = collectAuditEvidences(detail);
 
   if (evidencias.length > 0) {
-    for (const group of ["F-SU-01", "F-SU-02", "F-SU-03"] as const) {
+    for (const group of ["F-SU-01", "F-SU-02", "F-SU-03", "F-SU-04"] as const) {
       const items = evidencias.filter((item) => item.group === group);
       if (items.length === 0) {
         continue;
@@ -192,6 +193,7 @@ function collectAuditEvidences(detail: AuditDetail): AuditEvidence[] {
     ...mapEvidenceGroup("F-SU-01", detail.fsu01),
     ...mapEvidenceGroup("F-SU-02", detail.fsu02),
     ...mapEvidenceGroup("F-SU-03", detail.fsu03),
+    ...mapEvidenceGroup("F-SU-04", detail.fsu04),
   ];
 }
 

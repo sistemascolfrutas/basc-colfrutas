@@ -23,6 +23,12 @@ const actions = [
     permission: "fsu03" as const,
   },
   {
+    href: "/fsu-04",
+    title: "F-SU-04 Salida",
+    description: "Registrar fecha, hora, sellos y evidencia final de salida.",
+    permission: "fsu04" as const,
+  },
+  {
     href: "/auditoria",
     title: "Auditoria",
     description: "Buscar operaciones por placa o fecha y revisar formularios y evidencias.",

@@ -10,6 +10,7 @@ const navItems = [
   { href: "/fsu-01", label: "F-SU-01", permission: "fsu01" as const },
   { href: "/fsu-02", label: "F-SU-02", permission: "fsu02" as const },
   { href: "/fsu-03", label: "F-SU-03", permission: "fsu03" as const },
+  { href: "/fsu-04", label: "F-SU-04", permission: "fsu04" as const },
   { href: "/auditoria", label: "Auditoria", permission: "audit" as const },
   {
     href: "/admin/usuarios",

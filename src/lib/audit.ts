@@ -23,10 +23,11 @@ export type AuditDetail = {
   fsu01: Record<string, unknown> | null;
   fsu02: Record<string, unknown> | null;
   fsu03: Record<string, unknown> | null;
+  fsu04: Record<string, unknown> | null;
 };
 
 export type AuditEvidence = {
-  group: "F-SU-01" | "F-SU-02" | "F-SU-03";
+  group: "F-SU-01" | "F-SU-02" | "F-SU-03" | "F-SU-04";
   key: string;
   label: string;
   url: string;
@@ -79,7 +80,7 @@ export async function getOperacionAuditDetailWithClient(
   supabase: SupabaseClient,
   nombreOperacion: string,
 ) {
-  const [operacionRes, fsu01Res, fsu02Res, fsu03Res] = await Promise.all([
+  const [operacionRes, fsu01Res, fsu02Res, fsu03Res, fsu04Res] = await Promise.all([
     supabase
       .from("operaciones_maestra")
       .select("*")
@@ -97,6 +98,11 @@ export async function getOperacionAuditDetailWithClient(
       .maybeSingle<Record<string, unknown>>(),
     supabase
       .from("reg_fsu03_cargue_aseguramiento")
+      .select("*")
+      .eq("nombre_operacion", nombreOperacion)
+      .maybeSingle<Record<string, unknown>>(),
+    supabase
+      .from("reg_fsu04_salida")
       .select("*")
       .eq("nombre_operacion", nombreOperacion)
       .maybeSingle<Record<string, unknown>>(),
@@ -124,10 +130,15 @@ export async function getOperacionAuditDetailWithClient(
     throw new Error(`Error cargando F-SU-03: ${fsu03Res.error.message}`);
   }
 
+  if (fsu04Res.error) {
+    throw new Error(`Error cargando F-SU-04: ${fsu04Res.error.message}`);
+  }
+
   return {
     operacion: operacionRes.data,
     fsu01: fsu01Res.data,
     fsu02: fsu02Res.data,
     fsu03: fsu03Res.data,
+    fsu04: fsu04Res.data,
   } satisfies AuditDetail;
 }

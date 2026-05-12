@@ -5,7 +5,7 @@ import { normalizeEmail } from "@/lib/auth";
 export const APP_ROLES = ["admin", "porteria", "logistica"] as const;
 export type AppRole = (typeof APP_ROLES)[number];
 
-export const FORM_PERMISSIONS = ["fsu01", "fsu02", "fsu03"] as const;
+export const FORM_PERMISSIONS = ["fsu01", "fsu02", "fsu03", "fsu04"] as const;
 export type FormPermission = (typeof FORM_PERMISSIONS)[number];
 
 export const APP_PERMISSIONS = [
@@ -25,6 +25,7 @@ export const PERMISSION_LABELS: Record<AppPermission, string> = {
   fsu01: "F-SU-01",
   fsu02: "F-SU-02",
   fsu03: "F-SU-03",
+  fsu04: "F-SU-04",
   audit: "Auditoria",
   user_admin: "Gestion de usuarios",
 };
@@ -32,7 +33,7 @@ export const PERMISSION_LABELS: Record<AppPermission, string> = {
 const DEFAULT_FORM_PERMISSIONS_BY_ROLE: Record<AppRole, FormPermission[]> = {
   admin: [...FORM_PERMISSIONS],
   porteria: ["fsu01", "fsu02"],
-  logistica: ["fsu03"],
+  logistica: ["fsu03", "fsu04"],
 };
 
 export type AppUserRecord = {
