@@ -194,9 +194,9 @@ export function AdminFsu03ParticipantsPanel() {
             </form>
           </section>
 
-          <section className="rounded-[2rem] bg-slate-950 p-6 text-slate-100 shadow-[0_25px_80px_rgba(2,6,23,0.28)] md:p-8">
-            <div className="flex items-center justify-between gap-4">
-              <div>
+          <section className="min-w-0 rounded-[2rem] bg-slate-950 p-6 text-slate-100 shadow-[0_25px_80px_rgba(2,6,23,0.28)] md:p-8">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="min-w-0">
                 <h2 className="text-xl font-semibold">Opciones registradas</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
                   Las opciones activas aparecen en el formulario F-SU-03 en el
@@ -208,55 +208,69 @@ export function AdminFsu03ParticipantsPanel() {
               </span>
             </div>
 
-            <div className="mt-6 space-y-4">
+            <div className="mt-6 min-w-0 overflow-hidden rounded-[1.5rem] border border-slate-800">
               {participants.length === 0 ? (
-                <div className="rounded-2xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300">
+                <div className="bg-slate-900/80 px-4 py-3 text-sm text-slate-300">
                   No hay participantes registrados.
                 </div>
               ) : (
-                participants.map((participant) => (
-                  <article
-                    key={participant.id}
-                    className="rounded-[1.5rem] border border-slate-800 bg-slate-900/70 p-5"
-                  >
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-white">
-                          {participant.nombre}
-                        </h3>
-                      </div>
-                      <span
-                        className={[
-                          "rounded-full px-3 py-1 text-xs font-semibold",
-                          participant.is_active
-                            ? "bg-emerald-500/15 text-emerald-300"
-                            : "bg-slate-700 text-slate-300",
-                        ].join(" ")}
-                      >
-                        {participant.is_active ? "Activa" : "Inactiva"}
-                      </span>
-                    </div>
-
-                    <div className="mt-5 flex flex-wrap gap-3">
-                      <button
-                        type="button"
-                        disabled={isPending}
-                        onClick={() => startEdit(participant)}
-                        className="rounded-2xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-100 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:text-slate-500"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        disabled={isPending}
-                        onClick={() => handleDelete(participant.id)}
-                        className="rounded-2xl border border-rose-700 px-4 py-2 text-sm font-semibold text-rose-300 transition hover:bg-rose-950/50 disabled:cursor-not-allowed disabled:text-rose-800"
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </article>
-                ))
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[560px] table-fixed border-collapse bg-slate-900/70 text-left text-sm">
+                    <thead className="bg-slate-900 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+                      <tr>
+                        <th className="w-[52%] px-4 py-3">Nombre</th>
+                        <th className="w-[18%] px-4 py-3">Estado</th>
+                        <th className="w-[30%] px-4 py-3 text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800">
+                      {participants.map((participant) => (
+                        <tr key={participant.id} className="align-middle">
+                          <td className="px-4 py-4">
+                            <span
+                              className="block truncate font-semibold text-white"
+                              title={participant.nombre}
+                            >
+                              {participant.nombre}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <span
+                              className={[
+                                "inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold",
+                                participant.is_active
+                                  ? "bg-emerald-500/15 text-emerald-300"
+                                  : "bg-slate-700 text-slate-300",
+                              ].join(" ")}
+                            >
+                              {participant.is_active ? "Activa" : "Inactiva"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4">
+                            <div className="flex justify-end gap-2">
+                              <button
+                                type="button"
+                                disabled={isPending}
+                                onClick={() => startEdit(participant)}
+                                className="whitespace-nowrap rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-100 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:text-slate-500"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                type="button"
+                                disabled={isPending}
+                                onClick={() => handleDelete(participant.id)}
+                                className="whitespace-nowrap rounded-xl border border-rose-700 px-3 py-2 text-xs font-semibold text-rose-300 transition hover:bg-rose-950/50 disabled:cursor-not-allowed disabled:text-rose-800"
+                              >
+                                Eliminar
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           </section>

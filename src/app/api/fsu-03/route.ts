@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { createFsu03CargueWithClient, type EvidenciasFsu03Input, type Fsu03Input } from "@/lib/fsu03";
+import { getFsu03ParticipantOptionsWithClient } from "@/lib/fsu03-participants";
 import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
 import { getAuthorizedServerClient } from "@/lib/server-auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   const rateLimit = consumeRateLimit(`api:fsu03:${getClientIp(request.headers)}`, {
@@ -43,7 +45,11 @@ export async function POST(request: Request) {
       fotoCargue100: getFile(formData, "fotoCargue100"),
     };
 
-    const data = await createFsu03CargueWithClient(supabase, input, evidencias);
+    const participantOptions =
+      await getFsu03ParticipantOptionsWithClient(createAdminClient());
+    const data = await createFsu03CargueWithClient(supabase, input, evidencias, {
+      participantOptions,
+    });
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json(

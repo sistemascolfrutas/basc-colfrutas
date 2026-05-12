@@ -79,9 +79,12 @@ export async function createFsu03CargueWithClient(
   supabase: SupabaseClient,
   input: Fsu03Input,
   evidencias: EvidenciasFsu03Input,
+  options?: { participantOptions?: string[] },
 ) {
   validateFsu03Input(input, evidencias);
-  const participantOptions = await getFsu03ParticipantOptionsWithClient(supabase);
+  const participantOptions =
+    options?.participantOptions ??
+    (await getFsu03ParticipantOptionsWithClient(supabase));
   validateSelectedParticipants(input, participantOptions);
   const fechaCargue = normalizeOperationDate(input.fechaCargue);
   const placa = normalizePlate(input.placa);
