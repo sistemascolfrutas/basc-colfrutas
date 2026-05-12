@@ -9,8 +9,10 @@ import {
   validateRequiredBoolean,
   validateRequiredText,
 } from "@/lib/form-validation";
-import { updateOperacionMaestraWithClient } from "@/lib/operacion-status";
-import { requireOperacionIngresoWithClient } from "@/lib/operaciones-maestra";
+import {
+  requireOperacionIngresoWithClient,
+  syncOperacionStatusWithClient,
+} from "@/lib/operaciones-maestra";
 import {
   buildNombreOperacion,
   normalizeOperationDate,
@@ -162,7 +164,8 @@ export async function createFsu02InspeccionWithClient(
     "reg_fsu02_inspeccion",
     payload,
   );
-  await updateOperacionMaestraWithClient(supabase, nombreOperacion, {
+  await syncOperacionStatusWithClient(supabase, nombreOperacion, {
+    estado_ingreso: "completo",
     estado_inspeccion: "completo",
   });
 

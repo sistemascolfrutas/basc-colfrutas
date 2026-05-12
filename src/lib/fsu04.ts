@@ -8,8 +8,10 @@ import {
   validatePlate,
   validateRequiredText,
 } from "@/lib/form-validation";
-import { updateOperacionMaestraWithClient } from "@/lib/operacion-status";
-import { requireOperacionCargueWithClient } from "@/lib/operaciones-maestra";
+import {
+  requireOperacionCargueWithClient,
+  syncOperacionStatusWithClient,
+} from "@/lib/operaciones-maestra";
 import {
   buildNombreOperacion,
   normalizeOperationDate,
@@ -88,7 +90,10 @@ export async function createFsu04SalidaWithClient(
     "reg_fsu04_salida",
     payload,
   );
-  await updateOperacionMaestraWithClient(supabase, nombreOperacion, {
+  await syncOperacionStatusWithClient(supabase, nombreOperacion, {
+    estado_ingreso: "completo",
+    estado_inspeccion: "completo",
+    estado_cargue: "completo",
     estado_salida: "completo",
   });
 

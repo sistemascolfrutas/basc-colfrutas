@@ -10,8 +10,10 @@ import {
   validateUniqueSelections,
 } from "@/lib/form-validation";
 import { getFsu03ParticipantOptionsWithClient } from "@/lib/fsu03-participants";
-import { updateOperacionMaestraWithClient } from "@/lib/operacion-status";
-import { requireOperacionIngresoWithClient } from "@/lib/operaciones-maestra";
+import {
+  requireOperacionInspeccionWithClient,
+  syncOperacionStatusWithClient,
+} from "@/lib/operaciones-maestra";
 import {
   buildNombreOperacion,
   normalizeOperationDate,
@@ -84,7 +86,7 @@ export async function createFsu03CargueWithClient(
   const fechaCargue = normalizeOperationDate(input.fechaCargue);
   const placa = normalizePlate(input.placa);
 
-  const operacion = await requireOperacionIngresoWithClient(supabase, {
+  const operacion = await requireOperacionInspeccionWithClient(supabase, {
     placa,
     fecha: fechaCargue,
   });
@@ -117,7 +119,9 @@ export async function createFsu03CargueWithClient(
     "reg_fsu03_cargue_aseguramiento",
     payload,
   );
-  await updateOperacionMaestraWithClient(supabase, nombreOperacion, {
+  await syncOperacionStatusWithClient(supabase, nombreOperacion, {
+    estado_ingreso: "completo",
+    estado_inspeccion: "completo",
     estado_cargue: "completo",
   });
 
