@@ -1,5 +1,9 @@
 "use client";
 
+import { useState } from "react";
+
+import { compressImageFile } from "@/lib/client-images";
+
 type SectionTitleProps = {
   eyebrow: string;
   title: string;
@@ -289,6 +293,37 @@ export function FileField({
   optional = false,
   disabled = false,
 }: FileFieldProps) {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [warning, setWarning] = useState<string | null>(null);
+
+  async function handleFileChange(selectedFile: File | null) {
+    setWarning(null);
+
+    if (!selectedFile) {
+      onChange(null);
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const compressedFile = await compressImageFile(selectedFile);
+      onChange(compressedFile);
+
+      if (compressedFile.size < selectedFile.size) {
+        setWarning(
+          `Imagen optimizada: ${formatFileSize(selectedFile.size)} -> ${formatFileSize(compressedFile.size)}.`,
+        );
+      }
+    } catch {
+      onChange(selectedFile);
+      setWarning(
+        "No fue posible optimizar esta imagen. Si no guarda, toma la foto con menor resolucion.",
+      );
+    } finally {
+      setIsProcessing(false);
+    }
+  }
+
   return (
     <label className="min-w-0 flex flex-col gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm font-medium text-slate-700">
       <span>
@@ -299,18 +334,31 @@ export function FileField({
         type="file"
         accept="image/*"
         capture="environment"
-        disabled={disabled}
-        onChange={(event) => onChange(event.target.files?.[0] ?? null)}
+        disabled={disabled || isProcessing}
+        onChange={(event) => void handleFileChange(event.target.files?.[0] ?? null)}
         className="text-sm text-slate-600 file:mr-4 file:rounded-full file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white disabled:cursor-not-allowed"
       />
       <span className="text-xs text-slate-500">
-        {file ? `Archivo seleccionado: ${file.name}` : "Sin archivo seleccionado"}
+        {isProcessing
+          ? "Optimizando imagen..."
+          : file
+            ? `Archivo seleccionado: ${file.name} (${formatFileSize(file.size)})`
+            : "Sin archivo seleccionado"}
       </span>
+      {warning ? <span className="text-xs text-emerald-700">{warning}</span> : null}
       <span className="text-xs text-slate-400">
         Formatos: JPG, PNG, WEBP, HEIC. Maximo 8 MB.
       </span>
     </label>
   );
+}
+
+function formatFileSize(size: number) {
+  if (size < 1024 * 1024) {
+    return `${Math.max(1, Math.round(size / 1024))} KB`;
+  }
+
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export function OperationPreviewCard({
