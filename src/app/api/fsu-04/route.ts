@@ -7,6 +7,7 @@ import {
 } from "@/lib/fsu04";
 import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
 import { getAuthorizedServerClient } from "@/lib/server-auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   const rateLimit = consumeRateLimit(`api:fsu04:${getClientIp(request.headers)}`, {
@@ -22,8 +23,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const { errorResponse, supabase } = await getAuthorizedServerClient("fsu04");
-  if (errorResponse || !supabase) {
+  const { errorResponse } = await getAuthorizedServerClient("fsu04");
+  if (errorResponse) {
     return errorResponse;
   }
 
@@ -41,7 +42,11 @@ export async function POST(request: Request) {
       fotoFinalUnidadSalida: getFile(formData, "fotoFinalUnidadSalida"),
     };
 
-    const data = await createFsu04SalidaWithClient(supabase, input, evidencias);
+    const data = await createFsu04SalidaWithClient(
+      createAdminClient(),
+      input,
+      evidencias,
+    );
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json(
