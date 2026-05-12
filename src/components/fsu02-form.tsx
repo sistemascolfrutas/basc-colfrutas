@@ -13,6 +13,7 @@ import {
   SelectField,
   TextAreaField,
 } from "@/components/form-ui";
+import { PendingOperationPicker } from "@/components/pending-operation-picker";
 import {
   CHECK_OPTIONS,
   type EvidenciasFsu02Input,
@@ -185,6 +186,18 @@ export function Fsu02Form() {
           placa={normalizedPlate}
           fecha={normalizedDate}
           operationName={operationName}
+        />
+
+        <PendingOperationPicker
+          form="fsu02"
+          label="Seleccionar placa creada en F-SU-01"
+          onSelect={(operacion) =>
+            setForm((current) => ({
+              ...current,
+              fechaInspeccion: operacion.fecha,
+              placa: operacion.placa,
+            }))
+          }
         />
 
         <div className="grid gap-8">

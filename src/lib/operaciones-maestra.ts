@@ -19,6 +19,8 @@ type OperacionMaestraRecord = {
 
 export type { OperacionMaestraRecord };
 
+export type PendingOperacionForm = "fsu02" | "fsu03" | "fsu04";
+
 type GetOrCreateOperacionInput = {
   placa: string;
   fecha: string;
@@ -127,4 +129,42 @@ export async function requireOperacionCargueWithClient(
   }
 
   return operacion;
+}
+
+export async function getPendingOperacionesForFormWithClient(
+  supabase: SupabaseClient,
+  form: PendingOperacionForm,
+) {
+  let query = supabase
+    .from("operaciones_maestra")
+    .select(
+      "id,nombre_operacion,placa,fecha,conductor,empresa_transportadora,estado_ingreso,estado_inspeccion,estado_cargue,estado_salida,ruta_evidencias_folder",
+    )
+    .eq("estado_ingreso", "completo")
+    .order("fecha", { ascending: false })
+    .limit(50);
+
+  if (form === "fsu02") {
+    query = query.neq("estado_inspeccion", "completo");
+  }
+
+  if (form === "fsu03") {
+    query = query
+      .eq("estado_inspeccion", "completo")
+      .neq("estado_cargue", "completo");
+  }
+
+  if (form === "fsu04") {
+    query = query
+      .eq("estado_cargue", "completo")
+      .neq("estado_salida", "completo");
+  }
+
+  const { data, error } = await query.returns<OperacionMaestraRecord[]>();
+
+  if (error) {
+    throw new Error(`No fue posible cargar operaciones pendientes: ${error.message}`);
+  }
+
+  return data ?? [];
 }

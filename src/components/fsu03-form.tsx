@@ -13,6 +13,7 @@ import {
   SelectField,
   TextAreaField,
 } from "@/components/form-ui";
+import { PendingOperationPicker } from "@/components/pending-operation-picker";
 import {
   type EvidenciasFsu03Input,
   type Fsu03Input,
@@ -163,6 +164,18 @@ export function Fsu03Form() {
           placa={normalizedPlate}
           fecha={normalizedDate}
           operationName={operationName}
+        />
+
+        <PendingOperationPicker
+          form="fsu03"
+          label="Seleccionar placa pendiente de F-SU-03"
+          onSelect={(operacion) =>
+            setForm((current) => ({
+              ...current,
+              fechaCargue: operacion.fecha,
+              placa: operacion.placa,
+            }))
+          }
         />
 
         <div className="grid gap-8">

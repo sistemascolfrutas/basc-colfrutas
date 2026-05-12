@@ -11,6 +11,7 @@ import {
   SectionTitle,
   SelectField,
 } from "@/components/form-ui";
+import { PendingOperationPicker } from "@/components/pending-operation-picker";
 import {
   type EvidenciasFsu04Input,
   type Fsu04Input,
@@ -127,6 +128,20 @@ export function Fsu04Form() {
           placa={normalizedPlate}
           fecha={normalizedDate}
           operationName={operationName}
+        />
+
+        <PendingOperationPicker
+          form="fsu04"
+          label="Seleccionar placa pendiente de salida"
+          onSelect={(operacion) =>
+            setForm((current) => ({
+              ...current,
+              fechaHoraSalida: `${operacion.fecha}T${
+                current.fechaHoraSalida.split("T")[1] || "00:00"
+              }`,
+              placaNumeroContenedor: operacion.placa,
+            }))
+          }
         />
 
         <form
