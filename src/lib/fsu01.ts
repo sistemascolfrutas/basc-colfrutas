@@ -24,12 +24,11 @@ export const TIPO_OPERACION_OPTIONS = [
   "Transporte de materiales a productor",
   "Transporte de fruta a centro de acopio",
   "Transporte de acopio a puerto",
-  "Transporte de puerto a puerto",
   "Otro",
 ] as const;
 
 export const TIPO_OPERACION_CONTINUA_FLUJO =
-  "Transporte de puerto a puerto" as const;
+  "Transporte de acopio a puerto" as const;
 
 export const TIPO_VEHICULO_OPTIONS = [
   "Camion",

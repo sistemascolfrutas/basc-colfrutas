@@ -22,7 +22,7 @@ export type { OperacionMaestraRecord };
 
 export type PendingOperacionForm = "fsu02" | "fsu03" | "fsu04";
 
-const TIPO_OPERACION_CONTINUA_FLUJO = "Transporte de puerto a puerto";
+const TIPO_OPERACION_CONTINUA_FLUJO = "Transporte de acopio a puerto";
 
 type GetOrCreateOperacionInput = {
   placa: string;
