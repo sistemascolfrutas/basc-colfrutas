@@ -46,6 +46,12 @@ const actions = [
     description: "Crear, editar y eliminar las opciones de participantes del F-SU-03.",
     permission: "user_admin" as const,
   },
+  {
+    href: "/admin/responsables",
+    title: "Responsables",
+    description: "Crear, editar y eliminar las opciones de responsables.",
+    permission: "user_admin" as const,
+  },
 ];
 
 export default async function Home() {

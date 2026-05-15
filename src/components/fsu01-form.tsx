@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import {
   BooleanField,
   FileField,
   FloatingNotice,
   InputField,
-  OperationPreviewCard,
   SectionTitle,
   SelectField,
   TextAreaField,
@@ -19,11 +18,6 @@ import {
   TIPO_OPERACION_OPTIONS,
   TIPO_VEHICULO_OPTIONS,
 } from "@/lib/fsu01";
-import {
-  buildNombreOperacion,
-  normalizeOperationDate,
-  normalizePlate,
-} from "@/lib/operations";
 
 const initialForm: Fsu01Input = {
   fechaRegistro: "",
@@ -53,6 +47,7 @@ const initialFiles: EvidenciasInput = {
 export function Fsu01Form() {
   const [form, setForm] = useState<Fsu01Input>(initialForm);
   const [files, setFiles] = useState(initialFiles);
+  const [responsableOptions, setResponsableOptions] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -60,12 +55,31 @@ export function Fsu01Form() {
     null,
   );
 
-  const normalizedPlate = normalizePlate(form.placa);
-  const normalizedDate = normalizeOperationDate(form.fechaRegistro);
-  const operationName =
-    normalizedPlate && normalizedDate
-      ? buildNombreOperacion(normalizedPlate, normalizedDate)
-      : "";
+  useEffect(() => {
+    let active = true;
+
+    void (async () => {
+      try {
+        const options = await loadResponsableOptions();
+        if (active) {
+          setResponsableOptions(options);
+          setErrorMessage(null);
+        }
+      } catch (error) {
+        if (active) {
+          setErrorMessage(
+            error instanceof Error
+              ? error.message
+              : "No fue posible cargar responsables.",
+          );
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function setField(name: keyof Fsu01Input, value: string | boolean | null) {
     setForm((current) => ({
@@ -132,12 +146,6 @@ export function Fsu01Form() {
             </Link>
           </div>
         </header>
-
-        <OperationPreviewCard
-          placa={normalizedPlate}
-          fecha={normalizedDate}
-          operationName={operationName}
-        />
 
         <div className="grid gap-8">
           <form
@@ -261,11 +269,14 @@ export function Fsu01Form() {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <InputField
+              <SelectField
                 label="Responsable"
                 value={form.responsable}
                 onChange={(value) => setField("responsable", value)}
+                options={responsableOptions}
                 required
+                disabled={responsableOptions.length === 0}
+                tone="sky"
               />
               <TextAreaField
                 label="Observaciones"
@@ -306,16 +317,19 @@ export function Fsu01Form() {
 
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || responsableOptions.length === 0}
               className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-400"
             >
               {isPending ? "Guardando F-SU-01..." : "Guardar F-SU-01"}
             </button>
 
-            <p className="text-xs text-slate-500">
-              Los campos se guardan temporalmente en este dispositivo. Las fotos
-              deben volver a seleccionarse si la pagina se recarga.
-            </p>
+            {responsableOptions.length === 0 ? (
+              <p className="text-xs text-rose-600">
+                No hay responsables activos para elegir. Solicita al
+                administrador configurar el catalogo de responsables.
+              </p>
+            ) : null}
+
           </form>
         </div>
       </main>
@@ -327,6 +341,19 @@ export function Fsu01Form() {
       />
     </div>
   );
+}
+
+async function loadResponsableOptions() {
+  const response = await fetch("/api/responsables", {
+    cache: "no-store",
+  });
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || "No fue posible cargar responsables.");
+  }
+
+  return result as string[];
 }
 
 async function submitFsu01(form: Fsu01Input, files: EvidenciasInput) {

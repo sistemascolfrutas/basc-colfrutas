@@ -8,7 +8,6 @@ import {
   FileField,
   FloatingNotice,
   InputField,
-  OperationPreviewCard,
   SectionTitle,
   SelectField,
   TextAreaField,
@@ -18,11 +17,6 @@ import {
   type EvidenciasFsu03Input,
   type Fsu03Input,
 } from "@/lib/fsu03";
-import {
-  buildNombreOperacion,
-  normalizeOperationDate,
-  normalizePlate,
-} from "@/lib/operations";
 
 const initialForm: Fsu03Input = {
   fechaCargue: "",
@@ -78,13 +72,6 @@ export function Fsu03Form() {
       active = false;
     };
   }, []);
-
-  const normalizedPlate = normalizePlate(form.placa);
-  const normalizedDate = normalizeOperationDate(form.fechaCargue);
-  const operationName =
-    normalizedPlate && normalizedDate
-      ? buildNombreOperacion(normalizedPlate, normalizedDate)
-      : "";
 
   function setField(name: keyof Fsu03Input, value: string | boolean | null) {
     setForm((current) => ({
@@ -159,12 +146,6 @@ export function Fsu03Form() {
             </div>
           </div>
         </header>
-
-        <OperationPreviewCard
-          placa={normalizedPlate}
-          fecha={normalizedDate}
-          operationName={operationName}
-        />
 
         <PendingOperationPicker
           form="fsu03"

@@ -18,6 +18,7 @@ import {
   normalizeOperationDate,
   normalizePlate,
 } from "@/lib/operations";
+import { getResponsableOptionsWithClient } from "@/lib/responsables";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export const TIPO_OPERACION_OPTIONS = [
@@ -98,8 +99,12 @@ export async function createFsu01IngresoWithClient(
   supabase: SupabaseClient,
   input: Fsu01Input,
   evidencias: EvidenciasInput,
+  options?: { responsableOptions?: string[] },
 ) {
   validateFsu01Input(input, evidencias);
+  const responsableOptions =
+    options?.responsableOptions ?? (await getResponsableOptionsWithClient(supabase));
+  validateSelectedResponsable(input.responsable, responsableOptions);
   const fechaRegistro = normalizeOperationDate(input.fechaRegistro);
   const placa = normalizePlate(input.placa);
 
@@ -153,6 +158,18 @@ export async function createFsu01IngresoWithClient(
   });
 
   return data;
+}
+
+function validateSelectedResponsable(value: string, options: string[]) {
+  if (options.length === 0) {
+    throw new Error(
+      "No hay responsables activos. Solicita al administrador configurar el catalogo.",
+    );
+  }
+
+  if (!options.includes(value)) {
+    throw new Error("El responsable seleccionado ya no esta disponible. Vuelve a elegirlo.");
+  }
 }
 
 async function uploadFsu01Evidencias(

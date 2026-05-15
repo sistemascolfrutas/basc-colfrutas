@@ -22,6 +22,11 @@ const navItems = [
     label: "Participantes F-SU-03",
     permission: "user_admin" as const,
   },
+  {
+    href: "/admin/responsables",
+    label: "Responsables",
+    permission: "user_admin" as const,
+  },
 ];
 
 export default async function ProtectedLayout({

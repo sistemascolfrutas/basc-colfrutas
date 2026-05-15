@@ -7,7 +7,6 @@ import {
   FileField,
   FloatingNotice,
   InputField,
-  OperationPreviewCard,
   SectionTitle,
   SelectField,
 } from "@/components/form-ui";
@@ -16,12 +15,7 @@ import {
   type EvidenciasFsu04Input,
   type Fsu04Input,
   PUERTAS_SELLOS_OPTIONS,
-  getOperationDateFromDateTime,
 } from "@/lib/fsu04";
-import {
-  buildNombreOperacion,
-  normalizePlate,
-} from "@/lib/operations";
 
 const initialForm: Fsu04Input = {
   fechaHoraSalida: "",
@@ -42,13 +36,6 @@ export function Fsu04Form() {
   const [savedRecord, setSavedRecord] = useState<Record<string, unknown> | null>(
     null,
   );
-
-  const normalizedPlate = normalizePlate(form.placaNumeroContenedor);
-  const normalizedDate = getOperationDateFromDateTime(form.fechaHoraSalida);
-  const operationName =
-    normalizedPlate && normalizedDate
-      ? buildNombreOperacion(normalizedPlate, normalizedDate)
-      : "";
 
   function setField(name: keyof Fsu04Input, value: string) {
     setForm((current) => ({
@@ -123,12 +110,6 @@ export function Fsu04Form() {
             </div>
           </div>
         </header>
-
-        <OperationPreviewCard
-          placa={normalizedPlate}
-          fecha={normalizedDate}
-          operationName={operationName}
-        />
 
         <PendingOperationPicker
           form="fsu04"
