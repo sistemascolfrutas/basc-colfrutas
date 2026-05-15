@@ -24,8 +24,12 @@ export const TIPO_OPERACION_OPTIONS = [
   "Transporte de materiales a productor",
   "Transporte de fruta a centro de acopio",
   "Transporte de acopio a puerto",
+  "Transporte de puerto a puerto",
   "Otro",
 ] as const;
+
+export const TIPO_OPERACION_CONTINUA_FLUJO =
+  "Transporte de puerto a puerto" as const;
 
 export const TIPO_VEHICULO_OPTIONS = [
   "Camion",
@@ -215,8 +219,6 @@ export function validateFsu01Input(
     input.empresaTransportadora,
     "La empresa transportadora",
   );
-  validateRequiredText(input.origen, "El origen");
-  validateRequiredText(input.destino, "El destino");
   validateRequiredText(input.nombreConductor, "El nombre del conductor");
   validateRequiredText(input.numeroCedula, "El numero de cedula");
   validateRequiredText(input.responsable, "El responsable");

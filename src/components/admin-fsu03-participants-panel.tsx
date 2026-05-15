@@ -6,11 +6,13 @@ import type { Fsu03ParticipantRecord } from "@/lib/fsu03-participants";
 
 type ParticipantFormState = {
   nombre: string;
+  numeroCedula: string;
   isActive: boolean;
 };
 
 const initialForm: ParticipantFormState = {
   nombre: "",
+  numeroCedula: "",
   isActive: true,
 };
 
@@ -47,6 +49,7 @@ export function AdminFsu03ParticipantsPanel() {
     setEditingId(participant.id);
     setForm({
       nombre: participant.nombre,
+      numeroCedula: participant.numero_cedula ?? "",
       isActive: participant.is_active,
     });
     setMessage(null);
@@ -62,6 +65,7 @@ export function AdminFsu03ParticipantsPanel() {
       try {
         const payload = {
           nombre: form.nombre,
+          numeroCedula: form.numeroCedula,
           isActive: form.isActive,
         };
 
@@ -141,6 +145,14 @@ export function AdminFsu03ParticipantsPanel() {
                 onChange={(value) => setForm((current) => ({ ...current, nombre: value }))}
                 required
               />
+              <Field
+                label="Numero de cedula"
+                value={form.numeroCedula}
+                onChange={(value) =>
+                  setForm((current) => ({ ...current, numeroCedula: value }))
+                }
+                required
+              />
 
               <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
                 <input
@@ -218,14 +230,20 @@ export function AdminFsu03ParticipantsPanel() {
                   <table className="w-full min-w-[560px] table-fixed border-collapse bg-slate-900/70 text-left text-sm">
                     <thead className="bg-slate-900 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
                       <tr>
-                        <th className="w-[52%] px-4 py-3">Nombre</th>
+                        <th className="w-[34%] px-4 py-3">Cedula</th>
+                        <th className="w-[34%] px-4 py-3">Nombre</th>
                         <th className="w-[18%] px-4 py-3">Estado</th>
-                        <th className="w-[30%] px-4 py-3 text-right">Acciones</th>
+                        <th className="w-[14%] px-4 py-3 text-right">Acciones</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800">
                       {participants.map((participant) => (
                         <tr key={participant.id} className="align-middle">
+                          <td className="px-4 py-4">
+                            <span className="block truncate text-slate-200">
+                              {participant.numero_cedula || "Sin cedula"}
+                            </span>
+                          </td>
                           <td className="px-4 py-4">
                             <span
                               className="block truncate font-semibold text-white"

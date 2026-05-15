@@ -159,7 +159,6 @@ function addFormSummary(
       ([key, value]) =>
         !blockedKeys.has(key) && !key.endsWith("_url") && value !== null,
     )
-    .slice(0, 10)
     .map(([key, value]) => [formatLabel(key), formatValue(value)] as [string, string]);
 
   return addKeyValueBlock(doc, lines, y, margin, contentWidth);

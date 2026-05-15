@@ -209,23 +209,11 @@ export function Fsu01Form() {
               />
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2">
               <InputField
                 label="Empresa transportadora"
                 value={form.empresaTransportadora}
                 onChange={(value) => setField("empresaTransportadora", value)}
-                required
-              />
-              <InputField
-                label="Origen"
-                value={form.origen}
-                onChange={(value) => setField("origen", value)}
-                required
-              />
-              <InputField
-                label="Destino"
-                value={form.destino}
-                onChange={(value) => setField("destino", value)}
                 required
               />
             </div>

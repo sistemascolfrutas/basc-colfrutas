@@ -22,6 +22,8 @@ export type { OperacionMaestraRecord };
 
 export type PendingOperacionForm = "fsu02" | "fsu03" | "fsu04";
 
+const TIPO_OPERACION_CONTINUA_FLUJO = "Transporte de puerto a puerto";
+
 type GetOrCreateOperacionInput = {
   placa: string;
   fecha: string;
@@ -121,6 +123,12 @@ export async function requireOperacionIngresoWithClient(
     await syncOperacionStatusWithClient(supabase, nombreOperacion, {
       estado_ingreso: "completo",
     });
+  }
+
+  if (ingreso.tipo_operacion !== TIPO_OPERACION_CONTINUA_FLUJO) {
+    throw new Error(
+      `Esta operacion es "${ingreso.tipo_operacion}". Solo las operaciones "${TIPO_OPERACION_CONTINUA_FLUJO}" pueden continuar a F-SU-02, F-SU-03 y F-SU-04.`,
+    );
   }
 
   return operacion;
@@ -251,12 +259,16 @@ async function getPendingFromRecordsWithClient(
   completedTable: string,
   statusPatch: Parameters<typeof syncOperacionStatusWithClient>[2],
 ) {
+  const sourceSelect =
+    sourceTable === "reg_fsu01_ingreso"
+      ? "nombre_operacion,tipo_operacion"
+      : "nombre_operacion";
   const { data: sourceRecords, error: sourceError } = await supabase
     .from(sourceTable)
-    .select("nombre_operacion")
+    .select(sourceSelect)
     .order("created_at", { ascending: false })
     .limit(80)
-    .returns<Array<{ nombre_operacion: string }>>();
+    .returns<Array<{ nombre_operacion: string; tipo_operacion?: string }>>();
 
   if (sourceError) {
     throw new Error(
@@ -264,8 +276,15 @@ async function getPendingFromRecordsWithClient(
     );
   }
 
+  const recordsForFlow =
+    sourceTable === "reg_fsu01_ingreso"
+      ? (sourceRecords ?? []).filter(
+          (record) => record.tipo_operacion === TIPO_OPERACION_CONTINUA_FLUJO,
+        )
+      : (sourceRecords ?? []);
+
   const nombresOperacion = Array.from(
-    new Set((sourceRecords ?? []).map((record) => record.nombre_operacion)),
+    new Set(recordsForFlow.map((record) => record.nombre_operacion)),
   );
 
   if (nombresOperacion.length === 0) {
@@ -326,11 +345,13 @@ async function getExistingFormRecordWithClient(
   table: string,
   nombreOperacion: string,
 ) {
+  const selectColumns =
+    table === "reg_fsu01_ingreso" ? "id,tipo_operacion" : "id";
   const { data, error } = await supabase
     .from(table)
-    .select("id")
+    .select(selectColumns)
     .eq("nombre_operacion", nombreOperacion)
-    .maybeSingle<{ id: string }>();
+    .maybeSingle<{ id: string; tipo_operacion?: string }>();
 
   if (error) {
     throw new Error(

@@ -5,6 +5,7 @@ export const FSU03_PARTICIPANTS_TABLE = "fsu03_participants";
 export type Fsu03ParticipantRecord = {
   id: string;
   nombre: string;
+  numero_cedula: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -14,6 +15,7 @@ type Fsu03ParticipantRow = Fsu03ParticipantRecord;
 
 export type Fsu03ParticipantInput = {
   nombre: string;
+  numeroCedula: string;
   isActive: boolean;
 };
 
@@ -23,17 +25,23 @@ export function mapFsu03ParticipantRow(
   return {
     ...row,
     nombre: row.nombre.trim(),
+    numero_cedula: row.numero_cedula?.trim() || null,
   };
 }
 
 export function validateFsu03ParticipantInput(input: Fsu03ParticipantInput) {
-  const nombre = input.nombre.trim();
+  const nombre = String(input.nombre ?? "").trim();
+  const numeroCedula = String(input.numeroCedula ?? "").trim();
   if (nombre.length < 3) {
     throw new Error("El nombre del participante debe tener al menos 3 caracteres.");
+  }
+  if (numeroCedula.length < 5) {
+    throw new Error("El numero de cedula del participante debe tener al menos 5 caracteres.");
   }
 
   return {
     nombre,
+    numero_cedula: numeroCedula,
     is_active: Boolean(input.isActive),
   };
 }
@@ -68,7 +76,11 @@ export async function getFsu03ParticipantOptionsWithClient(
     onlyActive: true,
   });
 
-  return participants.map((item) => item.nombre);
+  return participants.map(formatFsu03ParticipantOption);
+}
+
+export function formatFsu03ParticipantOption(item: Fsu03ParticipantRecord) {
+  return item.numero_cedula ? `${item.numero_cedula} - ${item.nombre}` : item.nombre;
 }
 
 export async function createFsu03ParticipantWithClient(
@@ -80,7 +92,7 @@ export async function createFsu03ParticipantWithClient(
   const existing = await supabase
     .from(FSU03_PARTICIPANTS_TABLE)
     .select("id")
-    .ilike("nombre", payload.nombre)
+    .eq("numero_cedula", payload.numero_cedula)
     .maybeSingle<{ id: string }>();
 
   if (existing.error) {
@@ -90,7 +102,7 @@ export async function createFsu03ParticipantWithClient(
   }
 
   if (existing.data?.id) {
-    throw new Error("Ya existe un participante F-SU-03 con ese nombre.");
+    throw new Error("Ya existe un participante F-SU-03 con ese numero de cedula.");
   }
 
   const { data, error } = await supabase
@@ -116,7 +128,7 @@ export async function updateFsu03ParticipantWithClient(
   const existing = await supabase
     .from(FSU03_PARTICIPANTS_TABLE)
     .select("id")
-    .ilike("nombre", payload.nombre)
+    .eq("numero_cedula", payload.numero_cedula)
     .neq("id", id)
     .maybeSingle<{ id: string }>();
 
@@ -127,7 +139,7 @@ export async function updateFsu03ParticipantWithClient(
   }
 
   if (existing.data?.id) {
-    throw new Error("Ya existe otro participante F-SU-03 con ese nombre.");
+    throw new Error("Ya existe otro participante F-SU-03 con ese numero de cedula.");
   }
 
   const { data, error } = await supabase
