@@ -16,6 +16,12 @@ type TableColumn = {
 };
 
 type TableRow = Record<string, string>;
+type AuditFormCode = AuditEvidence["group"];
+type ApplicableForm = {
+  code: AuditFormCode;
+  record: Record<string, unknown> | null;
+  state: string;
+};
 
 const PAGE_MARGIN = 8;
 const LINE_COLOR = [31, 41, 55] as const;
@@ -41,13 +47,14 @@ export async function generateAuditPdf(detail: AuditDetail) {
   });
 
   const logo = await loadPublicImage("/logo.png");
+  const applicableForms = getApplicableForms(detail);
   let y = PAGE_MARGIN;
 
   y = addDocumentHeader(doc, detail, logo, y);
   y = addOperationData(doc, detail, y + 2);
-  y = addProcessSummary(doc, detail, y + 3);
-  y = addFormTables(doc, detail, y + 2);
-  await addEvidenceSection(doc, detail, y + 3);
+  y = addProcessSummary(doc, applicableForms, y + 3);
+  y = addFormTables(doc, applicableForms, y + 2);
+  await addEvidenceSection(doc, applicableForms, y + 3);
 
   addPageFooters(doc, detail.operacion.nombre_operacion);
   doc.save(`${detail.operacion.nombre_operacion}-informe-basc.pdf`);
@@ -132,16 +139,12 @@ function addOperationData(doc: jsPDF, detail: AuditDetail, y: number) {
   y = addBand(doc, "1. DATOS DEL CONDUCTOR Y DEL VEHICULO", y);
 
   const fsu01 = detail.fsu01 ?? {};
-  const fsu02 = detail.fsu02 ?? {};
   const fsu04 = detail.fsu04 ?? {};
   const driverIdentity = getDriverIdentity(detail);
-  const requiresFullFlow = requiresInspectionAndLoading(detail);
-  const inspectionValue = (key: string) =>
-    requiresFullFlow ? valueFrom(fsu02, key) : "No aplica";
   const rows: Array<Array<[string, string]>> = [
     [
       ["Codigo", detail.operacion.nombre_operacion],
-      ["Fecha inspeccion", valueFrom(fsu02, "fecha_inspeccion") || detail.operacion.fecha],
+      ["Fecha operacion", detail.operacion.fecha],
       ["Estado final", buildOverallState(detail)],
     ],
     [
@@ -151,69 +154,26 @@ function addOperationData(doc: jsPDF, detail: AuditDetail, y: number) {
     ],
     [
       ["Empresa transportadora", detail.operacion.empresa_transportadora || ""],
-      ["Remolque / contenedor", inspectionValue("numero_remolque_contenedor")],
       ["Placa / contenedor salida", valueFrom(fsu04, "placa_numero_contenedor")],
+      ["Responsable", valueFrom(fsu01, "responsable")],
     ],
     [
       ["Tipo operacion", joinOther(valueFrom(fsu01, "tipo_operacion"), valueFrom(fsu01, "tipo_operacion_otro"))],
       ["Tipo vehiculo", joinOther(valueFrom(fsu01, "tipo_vehiculo"), valueFrom(fsu01, "tipo_vehiculo_otro"))],
-      ["Responsable ingreso", valueFrom(fsu01, "responsable")],
-    ],
-    [
-      ["Responsable inspeccion", inspectionValue("responsable_inspeccion")],
-      ["Resultado inspeccion", inspectionValue("resultado_final_inspeccion")],
-      ["Autoriza cargue", inspectionValue("se_autoriza_para_cargue")],
+      ["Fecha salida", valueFrom(fsu04, "fecha_hora_salida")],
     ],
   ];
 
   return addFieldGrid(doc, rows, y);
 }
 
-function addProcessSummary(doc: jsPDF, detail: AuditDetail, y: number) {
+function addProcessSummary(doc: jsPDF, forms: ApplicableForm[], y: number) {
   y = addBand(doc, "2. RESUMEN DEL PROCESO", y);
-  const requiresFullFlow = requiresInspectionAndLoading(detail);
 
-  const rows = [
-    {
-      form: "F-SU-01",
-      name: FORM_TITLES["F-SU-01"],
-      state: detail.operacion.estado_ingreso,
-      result: valueFrom(detail.fsu01, "autoriza_ingreso"),
-      observations: valueFrom(detail.fsu01, "observaciones"),
-    },
-    {
-      form: "F-SU-02",
-      name: FORM_TITLES["F-SU-02"],
-      state: requiresFullFlow ? detail.operacion.estado_inspeccion : "no_aplica",
-      result: requiresFullFlow
-        ? valueFrom(detail.fsu02, "resultado_final_inspeccion")
-        : "No aplica",
-      observations: requiresFullFlow
-        ? valueFrom(detail.fsu02, "descripcion_novedad")
-        : "No aplica",
-    },
-    {
-      form: "F-SU-03",
-      name: FORM_TITLES["F-SU-03"],
-      state: requiresFullFlow ? detail.operacion.estado_cargue : "no_aplica",
-      result: requiresFullFlow ? valueFrom(detail.fsu03, "se_realizo_cargue") : "No aplica",
-      observations: requiresFullFlow
-        ? valueFrom(detail.fsu03, "observaciones_cargue")
-        : "No aplica",
-    },
-    {
-      form: "F-SU-04",
-      name: FORM_TITLES["F-SU-04"],
-      state: detail.operacion.estado_salida,
-      result: valueFrom(detail.fsu04, "puertas_cerradas_sellos_instalados"),
-      observations: "",
-    },
-  ].map((row) => ({
-    form: row.form,
-    name: row.name,
-    state: formatState(row.state),
-    result: row.result || "Sin dato",
-    observations: row.observations || "Sin observaciones",
+  const rows = forms.map((form) => ({
+    form: form.code,
+    name: FORM_TITLES[form.code],
+    state: formatState(form.state),
   }));
 
   return addTable(
@@ -221,33 +181,24 @@ function addProcessSummary(doc: jsPDF, detail: AuditDetail, y: number) {
     y,
     [
       { key: "form", title: "Formato", width: 28, align: "center" },
-      { key: "name", title: "Proceso", width: 74 },
-      { key: "state", title: "Estado", width: 40, align: "center" },
-      { key: "result", title: "Resultado", width: 44, align: "center" },
-      { key: "observations", title: "Observaciones", width: 95 },
+      { key: "name", title: "Proceso", width: 193 },
+      { key: "state", title: "Estado", width: 60, align: "center" },
     ],
     rows,
     { headerFill: LIGHT_BLUE },
   );
 }
 
-function addFormTables(doc: jsPDF, detail: AuditDetail, y: number) {
-  const forms = [
-    ["F-SU-01", detail.fsu01],
-    ["F-SU-02", detail.fsu02],
-    ["F-SU-03", detail.fsu03],
-    ["F-SU-04", detail.fsu04],
-  ] as const;
-
-  forms.forEach(([code, record], index) => {
-    if (!record) {
+function addFormTables(doc: jsPDF, forms: ApplicableForm[], y: number) {
+  forms.forEach((form, index) => {
+    if (!form.record) {
       return;
     }
 
     y = ensureSpace(doc, y, 22);
-    y = addBand(doc, `${index + 3}. ${code} - ${FORM_TITLES[code]}`, y);
+    y = addBand(doc, `${index + 3}. ${form.code} - ${FORM_TITLES[form.code]}`, y);
 
-    const rows = buildFormRows(record);
+    const rows = buildFormRows(form.record);
     y = addTable(
       doc,
       y,
@@ -265,8 +216,8 @@ function addFormTables(doc: jsPDF, detail: AuditDetail, y: number) {
   return y;
 }
 
-async function addEvidenceSection(doc: jsPDF, detail: AuditDetail, y: number) {
-  const evidences = collectAuditEvidences(detail);
+async function addEvidenceSection(doc: jsPDF, forms: ApplicableForm[], y: number) {
+  const evidences = collectAuditEvidences(forms);
 
   if (evidences.length === 0) {
     return y;
@@ -275,14 +226,14 @@ async function addEvidenceSection(doc: jsPDF, detail: AuditDetail, y: number) {
   y = ensureSpace(doc, y, 24);
   y = addBand(doc, "EVIDENCIAS FOTOGRAFICAS", y, GREEN);
 
-  for (const group of ["F-SU-01", "F-SU-02", "F-SU-03", "F-SU-04"] as const) {
-    const items = evidences.filter((item) => item.group === group);
+  for (const form of forms) {
+    const items = evidences.filter((item) => item.group === form.code);
     if (items.length === 0) {
       continue;
     }
 
     y = ensureSpace(doc, y, 18);
-    y = addSubBand(doc, `${group} - ${FORM_TITLES[group]}`, y);
+    y = addSubBand(doc, `${form.code} - ${FORM_TITLES[form.code]}`, y);
 
     for (let index = 0; index < items.length; index += 2) {
       const pair = items.slice(index, index + 2);
@@ -601,13 +552,42 @@ function requiresInspectionAndLoading(detail: AuditDetail) {
   return valueFrom(detail.fsu01, "tipo_operacion") === TIPO_OPERACION_CONTINUA_FLUJO;
 }
 
-function collectAuditEvidences(detail: AuditDetail): AuditEvidence[] {
-  return [
-    ...mapEvidenceGroup("F-SU-01", detail.fsu01),
-    ...mapEvidenceGroup("F-SU-02", detail.fsu02),
-    ...mapEvidenceGroup("F-SU-03", detail.fsu03),
-    ...mapEvidenceGroup("F-SU-04", detail.fsu04),
+function getApplicableForms(detail: AuditDetail): ApplicableForm[] {
+  const directForms: ApplicableForm[] = [
+    {
+      code: "F-SU-01",
+      record: detail.fsu01,
+      state: detail.operacion.estado_ingreso,
+    },
+    {
+      code: "F-SU-04",
+      record: detail.fsu04,
+      state: detail.operacion.estado_salida,
+    },
   ];
+
+  if (!requiresInspectionAndLoading(detail)) {
+    return directForms;
+  }
+
+  return [
+    directForms[0],
+    {
+      code: "F-SU-02",
+      record: detail.fsu02,
+      state: detail.operacion.estado_inspeccion,
+    },
+    {
+      code: "F-SU-03",
+      record: detail.fsu03,
+      state: detail.operacion.estado_cargue,
+    },
+    directForms[1],
+  ];
+}
+
+function collectAuditEvidences(forms: ApplicableForm[]): AuditEvidence[] {
+  return forms.flatMap((form) => mapEvidenceGroup(form.code, form.record));
 }
 
 function mapEvidenceGroup(
