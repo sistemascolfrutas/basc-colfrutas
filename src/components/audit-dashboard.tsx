@@ -121,13 +121,13 @@ export function AuditDashboard() {
           </div>
         </header>
 
-        <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
-          <section className="space-y-6">
-            <form
-              onSubmit={handleSearch}
-              className="rounded-[2rem] border border-slate-200 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.07)]"
-            >
-              <div className="border-b border-slate-200 pb-4">
+        <section className="space-y-6">
+          <form
+            onSubmit={handleSearch}
+            className="rounded-[2rem] border border-slate-200 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.07)]"
+          >
+            <div className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 pb-4">
+              <div>
                 <span className="text-xs font-bold uppercase tracking-[0.25em] text-sky-700">
                   Filtros
                 </span>
@@ -135,26 +135,26 @@ export function AuditDashboard() {
                   Buscar operacion
                 </h2>
               </div>
+            </div>
 
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
-                <Field
-                  label="Placa"
-                  value={placa}
-                  onChange={setPlaca}
-                  placeholder="Ej. BNL26F"
-                />
-                <Field
-                  label="Fecha"
-                  type="date"
-                  value={fecha}
-                  onChange={setFecha}
-                />
-              </div>
+            <div className="mt-6 grid gap-4 md:grid-cols-[1fr_1fr_auto_auto] md:items-end">
+              <Field
+                label="Placa"
+                value={placa}
+                onChange={setPlaca}
+                placeholder="Ej. BNL26F"
+              />
+              <Field
+                label="Fecha"
+                type="date"
+                value={fecha}
+                onChange={setFecha}
+              />
 
               <button
                 type="submit"
                 disabled={isPending}
-                className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+                className="inline-flex min-h-[52px] items-center justify-center rounded-2xl bg-slate-950 px-8 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-400"
               >
                 {isPending ? "Consultando..." : "Buscar"}
               </button>
@@ -186,52 +186,50 @@ export function AuditDashboard() {
                     }
                   });
                 }}
-                className="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
+                className="inline-flex min-h-[52px] items-center justify-center rounded-2xl border border-slate-200 bg-white px-6 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
               >
                 Limpiar filtros
               </button>
+            </div>
 
-              {searchMessage ? (
-                <div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
-                  {searchMessage}
-                </div>
-              ) : null}
+            {searchMessage ? (
+              <div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+                {searchMessage}
+              </div>
+            ) : null}
 
-              {errorMessage ? (
-                <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                  {errorMessage}
-                </div>
-              ) : null}
-            </form>
+            {errorMessage ? (
+              <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {errorMessage}
+              </div>
+            ) : null}
+          </form>
 
-            <ResultsTable
-              results={results}
-              selectedNombreOperacion={selected?.operacion.nombre_operacion ?? null}
-              isPending={isPending}
-              onSelect={handleLoadDetail}
-            />
-          </section>
+          <ResultsTable
+            results={results}
+            selectedNombreOperacion={selected?.operacion.nombre_operacion ?? null}
+            isPending={isPending}
+            onSelect={handleLoadDetail}
+          />
 
-          <section className="space-y-6">
-            <DetailCard
-              detail={selected}
-              onPreviewEvidence={setActiveEvidence}
-              onGeneratePdf={async (detail) => {
-                if (isGeneratingPdf) {
-                  return;
-                }
+          <DetailCard
+            detail={selected}
+            onPreviewEvidence={setActiveEvidence}
+            onGeneratePdf={async (detail) => {
+              if (isGeneratingPdf) {
+                return;
+              }
 
-                setIsGeneratingPdf(true);
-                try {
-                  await generateAuditPdf(detail);
-                } finally {
-                  setIsGeneratingPdf(false);
-                }
-              }}
-              isGeneratingPdf={isGeneratingPdf}
-            />
-          </section>
-        </div>
+              setIsGeneratingPdf(true);
+              try {
+                await generateAuditPdf(detail);
+              } finally {
+                setIsGeneratingPdf(false);
+              }
+            }}
+            isGeneratingPdf={isGeneratingPdf}
+          />
+        </section>
       </main>
 
       {activeEvidence ? (
@@ -389,7 +387,7 @@ function DetailCard({
     return (
       <section className="rounded-[2rem] border border-slate-200 bg-white/90 p-8 shadow-[0_20px_60px_rgba(15,23,42,0.07)]">
         <h2 className="text-2xl font-semibold text-slate-950">
-          Detalle de auditoria
+          Formularios de la operacion
         </h2>
         <p className="mt-3 text-sm leading-6 text-slate-600">
           Selecciona una operacion para ver la informacion consolidada.
@@ -405,61 +403,12 @@ function DetailCard({
 
   return (
     <>
-      <section className="rounded-[2rem] border border-slate-200 bg-white/90 p-8 shadow-[0_20px_60px_rgba(15,23,42,0.07)]">
-        <span className="text-xs font-bold uppercase tracking-[0.24em] text-sky-700">
-          Operacion
-        </span>
-        <h2 className="mt-2 text-2xl font-semibold text-slate-950">
-          {detail.operacion.nombre_operacion}
-        </h2>
-
-        <div className="mt-4">
-          <button
-            type="button"
-            disabled={isGeneratingPdf}
-            onClick={() => void onGeneratePdf(detail)}
-            className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-400"
-          >
-            {isGeneratingPdf ? "Generando PDF..." : "Descargar informe PDF"}
-          </button>
-        </div>
-
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <DataChip label="Placa" value={detail.operacion.placa} />
-          <DataChip label="Fecha" value={detail.operacion.fecha} />
-          <DataChip
-            label="Conductor"
-            value={detail.operacion.conductor || "Sin dato"}
-          />
-          <DataChip
-            label="Transportadora"
-            value={detail.operacion.empresa_transportadora || "Sin dato"}
-          />
-          <DataChip
-            label="Ruta evidencias"
-            value={detail.operacion.ruta_evidencias_folder || "Sin dato"}
-          />
-          <DataChip
-            label="Creada"
-            value={formatDateTime(detail.operacion.created_at)}
-          />
-        </div>
-
-        <div className="mt-6 grid gap-4 md:grid-cols-4">
-          <StateBadge label="Ingreso" value={detail.operacion.estado_ingreso} />
-          <StateBadge
-            label="Inspeccion"
-            value={detail.operacion.estado_inspeccion}
-          />
-          <StateBadge label="Cargue" value={detail.operacion.estado_cargue} />
-          <StateBadge label="Salida" value={detail.operacion.estado_salida} />
-        </div>
-      </section>
-
       <FormTabs
         activeForm={activeForm}
         detail={detail}
         onChange={setActiveForm}
+        onGeneratePdf={onGeneratePdf}
+        isGeneratingPdf={isGeneratingPdf}
       />
 
       <section className="rounded-[2rem] bg-slate-950 p-6 text-slate-100 shadow-[0_25px_80px_rgba(2,6,23,0.28)]">
@@ -526,10 +475,14 @@ function FormTabs({
   activeForm,
   detail,
   onChange,
+  onGeneratePdf,
+  isGeneratingPdf,
 }: {
   activeForm: AuditEvidence["group"];
   detail: AuditDetail;
   onChange: (form: AuditEvidence["group"]) => void;
+  onGeneratePdf: (detail: AuditDetail) => Promise<void>;
+  isGeneratingPdf: boolean;
 }) {
   const forms: Array<{
     key: AuditEvidence["group"];
@@ -553,9 +506,17 @@ function FormTabs({
               Formularios de la operacion
             </h3>
             <p className="mt-1 text-sm text-slate-600">
-              Revisa un formulario a la vez para evitar informacion duplicada.
+              {detail.operacion.nombre_operacion}
             </p>
           </div>
+          <button
+            type="button"
+            disabled={isGeneratingPdf}
+            onClick={() => void onGeneratePdf(detail)}
+            className="mb-3 inline-flex min-h-[44px] items-center justify-center rounded-2xl bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+          >
+            {isGeneratingPdf ? "Generando PDF..." : "Descargar informe PDF"}
+          </button>
           <div className="flex max-w-full gap-2 overflow-x-auto pb-3">
             {forms.map((form) => {
               const isActive = form.key === activeForm;
@@ -753,35 +714,12 @@ function formatEstado(value: string) {
 }
 
 function getOverallState(item: OperacionMaestraAudit) {
-  const states = [
-    item.estado_ingreso,
-    item.estado_inspeccion,
-    item.estado_cargue,
-    item.estado_salida,
-  ];
-
-  return states.every((state) => state === "completo") ? "completo" : "pendiente";
-}
-
-function formatDateTime(value?: string) {
-  if (!value) {
-    return "Sin dato";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("es-CO", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(date);
+  return item.estado_salida === "completo" ? "completada" : "pendiente";
 }
 
 function InlineState({ value }: { value: string }) {
   const tone =
-    value === "completo"
+    value === "completo" || value === "completada"
       ? "bg-emerald-50 text-emerald-700"
       : value === "en_proceso"
         ? "bg-amber-50 text-amber-700"
@@ -818,32 +756,5 @@ function Field({
         className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-base text-slate-900 outline-none transition focus:border-sky-500 focus:bg-white"
       />
     </label>
-  );
-}
-
-function DataChip({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-      <span className="block text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
-        {label}
-      </span>
-      <p className="mt-2 break-words text-sm font-semibold text-slate-900">{value}</p>
-    </div>
-  );
-}
-
-function StateBadge({ label, value }: { label: string; value: string }) {
-  const tone =
-    value === "completo"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-      : value === "en_proceso"
-        ? "border-amber-200 bg-amber-50 text-amber-800"
-        : "border-slate-200 bg-slate-50 text-slate-700";
-
-  return (
-    <div className={`rounded-2xl border px-4 py-3 ${tone}`}>
-      <span className="block text-xs font-bold uppercase tracking-[0.2em]">{label}</span>
-      <p className="mt-2 text-sm font-semibold">{formatEstado(value)}</p>
-    </div>
   );
 }
