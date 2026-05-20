@@ -15,7 +15,8 @@ type StoredFile = {
   name: string;
   type: string;
   lastModified: number;
-  data: ArrayBuffer;
+  dataUrl: string;
+  data?: ArrayBuffer;
 };
 
 export async function loadBrowserDraft<TForm, TFiles>(key: string) {
@@ -124,7 +125,7 @@ async function serializeDraftFiles<TFiles>(files: TFiles) {
           name: file.name,
           type: file.type,
           lastModified: file.lastModified,
-          data: await file.arrayBuffer(),
+          dataUrl: await fileToDataUrl(file),
         } satisfies StoredFile,
       ] as const;
     }),
@@ -141,9 +142,16 @@ function reviveDraftFiles(files: Record<string, File | StoredFile | null>) {
       }
 
       if (isStoredFile(file)) {
+        if (file.dataUrl) {
+          return [
+            key,
+            dataUrlToFile(file.dataUrl, file.name, file.type, file.lastModified),
+          ];
+        }
+
         return [
           key,
-          new File([file.data], file.name, {
+          new File([file.data ?? new ArrayBuffer(0)], file.name, {
             type: file.type,
             lastModified: file.lastModified,
           }),
@@ -157,4 +165,35 @@ function reviveDraftFiles(files: Record<string, File | StoredFile | null>) {
 
 function isStoredFile(file: File | StoredFile): file is StoredFile {
   return "__type" in file && file.__type === "browser-draft-file";
+}
+
+function fileToDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function dataUrlToFile(
+  dataUrl: string,
+  name: string,
+  type: string,
+  lastModified: number,
+) {
+  const [metadata, content] = dataUrl.split(",");
+  const mime = metadata.match(/^data:(.*?);base64$/)?.[1] || type;
+  const binary = atob(content ?? "");
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return new File([bytes], name, {
+    type: mime,
+    lastModified,
+  });
 }

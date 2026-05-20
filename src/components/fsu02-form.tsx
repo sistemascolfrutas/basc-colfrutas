@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import {
   BooleanField,
@@ -95,6 +95,8 @@ const checkFields: Array<{ key: keyof Fsu02Input; label: string }> = [
 export function Fsu02Form() {
   const [form, setForm] = useState<Fsu02Input>(initialForm);
   const [files, setFiles] = useState(initialFiles);
+  const formRef = useRef(form);
+  const filesRef = useRef(files);
   const [responsableOptions, setResponsableOptions] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
   const [isDraftReady, setIsDraftReady] = useState(false);
@@ -140,8 +142,13 @@ export function Fsu02Form() {
         );
 
         if (active && draft) {
-          setForm({ ...initialForm, ...draft.form });
-          setFiles({ ...initialFiles, ...draft.files });
+          const draftForm = { ...initialForm, ...draft.form };
+          const draftFiles = { ...initialFiles, ...draft.files };
+
+          formRef.current = draftForm;
+          filesRef.current = draftFiles;
+          setForm(draftForm);
+          setFiles(draftFiles);
           setMessage("Se recupero un borrador local de F-SU-02.");
           window.setTimeout(() => {
             setMessage((current) =>
@@ -182,6 +189,10 @@ export function Fsu02Form() {
         form,
         files,
         updatedAt: new Date().toISOString(),
+      }).catch(() => {
+        setErrorMessage(
+          "No fue posible guardar temporalmente el borrador en este navegador.",
+        );
       });
     }, 400);
 
@@ -189,17 +200,53 @@ export function Fsu02Form() {
   }, [files, form, isDraftReady]);
 
   function setField(name: keyof Fsu02Input, value: string | boolean | null) {
-    setForm((current) => ({
-      ...current,
-      [name]: value,
-    }));
+    setForm((current) => {
+      const nextForm = {
+        ...current,
+        [name]: value,
+      };
+
+      formRef.current = nextForm;
+      return nextForm;
+    });
   }
 
   function setFile(name: keyof EvidenciasFsu02Input, file: File | null) {
-    setFiles((current) => ({
-      ...current,
+    const nextFiles = {
+      ...filesRef.current,
       [name]: file,
-    }));
+    };
+
+    filesRef.current = nextFiles;
+    setFiles(nextFiles);
+
+    void persistDraftNow(formRef.current, nextFiles);
+  }
+
+  async function persistDraftNow(
+    nextForm: Fsu02Input,
+    nextFiles: EvidenciasFsu02Input,
+  ) {
+    if (!isDraftReady) {
+      return;
+    }
+
+    try {
+      if (!hasDraftContent(nextForm, nextFiles)) {
+        await clearBrowserDraft(DRAFT_KEY);
+        return;
+      }
+
+      await saveBrowserDraft(DRAFT_KEY, {
+        form: nextForm,
+        files: nextFiles,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch {
+      setErrorMessage(
+        "No fue posible guardar temporalmente la foto en este navegador.",
+      );
+    }
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -217,6 +264,8 @@ export function Fsu02Form() {
         );
         setForm(initialForm);
         setFiles(initialFiles);
+        formRef.current = initialForm;
+        filesRef.current = initialFiles;
         await clearBrowserDraft(DRAFT_KEY);
       } catch (error) {
         setErrorMessage(
@@ -267,11 +316,16 @@ export function Fsu02Form() {
           form="fsu02"
           label="Seleccionar placa creada en F-SU-01"
           onSelect={(operacion) =>
-            setForm((current) => ({
-              ...current,
-              fechaInspeccion: operacion.fecha,
-              placa: operacion.placa,
-            }))
+            setForm((current) => {
+              const nextForm = {
+                ...current,
+                fechaInspeccion: operacion.fecha,
+                placa: operacion.placa,
+              };
+
+              formRef.current = nextForm;
+              return nextForm;
+            })
           }
         />
 
