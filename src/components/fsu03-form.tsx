@@ -14,9 +14,16 @@ import {
 } from "@/components/form-ui";
 import { PendingOperationPicker } from "@/components/pending-operation-picker";
 import {
+  clearBrowserDraft,
+  loadBrowserDraft,
+  saveBrowserDraft,
+} from "@/lib/browser-drafts";
+import {
   type EvidenciasFsu03Input,
   type Fsu03Input,
 } from "@/lib/fsu03";
+
+const DRAFT_KEY = "fsu03-form-draft";
 
 const initialForm: Fsu03Input = {
   fechaCargue: "",
@@ -41,6 +48,7 @@ export function Fsu03Form() {
   const [files, setFiles] = useState(initialFiles);
   const [participantOptions, setParticipantOptions] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
+  const [isDraftReady, setIsDraftReady] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savedRecord, setSavedRecord] = useState<Record<string, unknown> | null>(
@@ -73,6 +81,57 @@ export function Fsu03Form() {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+
+    void (async () => {
+      try {
+        const draft = await loadBrowserDraft<Fsu03Input, EvidenciasFsu03Input>(
+          DRAFT_KEY,
+        );
+
+        if (active && draft) {
+          setForm({ ...initialForm, ...draft.form });
+          setFiles({ ...initialFiles, ...draft.files });
+          setMessage("Se recupero un borrador local de F-SU-03.");
+        }
+      } catch {
+        if (active) {
+          setErrorMessage("No fue posible recuperar el borrador local de F-SU-03.");
+        }
+      } finally {
+        if (active) {
+          setIsDraftReady(true);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isDraftReady) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      if (!hasDraftContent(form, files)) {
+        void clearBrowserDraft(DRAFT_KEY);
+        return;
+      }
+
+      void saveBrowserDraft(DRAFT_KEY, {
+        form,
+        files,
+        updatedAt: new Date().toISOString(),
+      });
+    }, 400);
+
+    return () => window.clearTimeout(timeout);
+  }, [files, form, isDraftReady]);
+
   function setField(name: keyof Fsu03Input, value: string | boolean | null) {
     setForm((current) => ({
       ...current,
@@ -102,6 +161,7 @@ export function Fsu03Form() {
         );
         setForm(initialForm);
         setFiles(initialFiles);
+        await clearBrowserDraft(DRAFT_KEY);
       } catch (error) {
         setErrorMessage(
           error instanceof Error
@@ -336,6 +396,13 @@ async function submitFsu03(form: Fsu03Input, files: EvidenciasFsu03Input) {
   }
 
   return result as Record<string, unknown>;
+}
+
+function hasDraftContent(form: Fsu03Input, files: EvidenciasFsu03Input) {
+  return (
+    Object.values(form).some((value) => value !== "" && value !== null) ||
+    Object.values(files).some(Boolean)
+  );
 }
 
 async function loadParticipantOptions() {
