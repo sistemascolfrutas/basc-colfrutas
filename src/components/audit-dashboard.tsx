@@ -11,6 +11,8 @@ import {
 } from "@/lib/audit";
 import { formatEvidenceLabel, normalizeEvidenceUrl } from "@/lib/evidence";
 
+const TIPO_OPERACION_CONTINUA_FLUJO = "Transporte de acopio a puerto";
+
 export function AuditDashboard() {
   const [placa, setPlaca] = useState("");
   const [fecha, setFecha] = useState("");
@@ -400,6 +402,9 @@ function DetailCard({
   const activeEvidenceItems = evidencias.filter(
     (evidence) => evidence.group === activeForm,
   );
+  const activeFormDoesNotApply =
+    !requiresInspectionAndLoading(detail) &&
+    (activeForm === "F-SU-02" || activeForm === "F-SU-03");
 
   return (
     <>
@@ -424,7 +429,11 @@ function DetailCard({
           </span>
         </div>
 
-        {activeEvidenceItems.length === 0 ? (
+        {activeFormDoesNotApply ? (
+          <div className="mt-6 rounded-2xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300">
+            No aplica para este tipo de operacion.
+          </div>
+        ) : activeEvidenceItems.length === 0 ? (
           <div className="mt-6 rounded-2xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300">
             No se detectaron evidencias para este formulario.
           </div>
@@ -496,6 +505,9 @@ function FormTabs({
   ];
   const current = forms.find((form) => form.key === activeForm) ?? forms[0];
   const fields = buildSummaryFields(current.record);
+  const isNotApplicable =
+    !requiresInspectionAndLoading(detail) &&
+    (current.key === "F-SU-02" || current.key === "F-SU-03");
 
   return (
     <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white/90 shadow-[0_20px_60px_rgba(15,23,42,0.07)]">
@@ -546,7 +558,11 @@ function FormTabs({
       </div>
 
       <div className="p-6">
-        {!current.record ? (
+        {isNotApplicable ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-6 text-sm font-semibold text-slate-700">
+            No aplica para este tipo de operacion.
+          </div>
+        ) : !current.record ? (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-6 text-sm text-slate-600">
             Sin datos cargados por ahora.
           </div>
@@ -687,12 +703,48 @@ function buildSummaryFields(record: Record<string, unknown> | null) {
     "destino",
   ]);
 
-  return Object.entries(record)
+  const normalizedRecord = normalizeRecordForDisplay(record);
+
+  return Object.entries(normalizedRecord)
     .filter(([key, value]) => !blockedKeys.has(key) && !key.endsWith("_url") && value !== null)
     .map(([key, value]) => ({
       label: humanizeFieldLabel(key),
       value: formatSummaryValue(value),
     }));
+}
+
+function normalizeRecordForDisplay(record: Record<string, unknown>) {
+  const normalized = { ...record };
+  const driverIdentity = normalizeDriverIdentity(
+    formatRawValue(record.nombre_conductor),
+    formatRawValue(record.numero_cedula),
+  );
+
+  if (driverIdentity.wasSwapped) {
+    normalized.nombre_conductor = driverIdentity.name;
+    normalized.numero_cedula = driverIdentity.document;
+  }
+
+  return normalized;
+}
+
+function normalizeDriverIdentity(name: string, document: string) {
+  const shouldSwap = looksLikeDocument(name) && looksLikePersonName(document);
+
+  return {
+    name: shouldSwap ? document : name,
+    document: shouldSwap ? name : document,
+    wasSwapped: shouldSwap,
+  };
+}
+
+function looksLikeDocument(value: string) {
+  const compact = value.replace(/\D/g, "");
+  return compact.length >= 5 && compact.length >= value.trim().length * 0.65;
+}
+
+function looksLikePersonName(value: string) {
+  return /[a-záéíóúñü]/i.test(value) && !looksLikeDocument(value);
 }
 
 function humanizeFieldLabel(value: string) {
@@ -709,12 +761,26 @@ function formatSummaryValue(value: unknown) {
   return String(value);
 }
 
+function formatRawValue(value: unknown) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  return String(value);
+}
+
 function formatEstado(value: string) {
   return value.replaceAll("_", " ");
 }
 
 function getOverallState(item: OperacionMaestraAudit) {
   return item.estado_salida === "completo" ? "completada" : "pendiente";
+}
+
+function requiresInspectionAndLoading(detail: AuditDetail) {
+  return (
+    formatRawValue(detail.fsu01?.tipo_operacion) === TIPO_OPERACION_CONTINUA_FLUJO
+  );
 }
 
 function InlineState({ value }: { value: string }) {

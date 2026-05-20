@@ -31,6 +31,7 @@ const FORM_TITLES = {
   "F-SU-03": "Cargue y aseguramiento",
   "F-SU-04": "Salida de unidad",
 } as const;
+const TIPO_OPERACION_CONTINUA_FLUJO = "Transporte de acopio a puerto";
 
 export async function generateAuditPdf(detail: AuditDetail) {
   const doc = new jsPDF({
@@ -133,6 +134,10 @@ function addOperationData(doc: jsPDF, detail: AuditDetail, y: number) {
   const fsu01 = detail.fsu01 ?? {};
   const fsu02 = detail.fsu02 ?? {};
   const fsu04 = detail.fsu04 ?? {};
+  const driverIdentity = getDriverIdentity(detail);
+  const requiresFullFlow = requiresInspectionAndLoading(detail);
+  const inspectionValue = (key: string) =>
+    requiresFullFlow ? valueFrom(fsu02, key) : "No aplica";
   const rows: Array<Array<[string, string]>> = [
     [
       ["Codigo", detail.operacion.nombre_operacion],
@@ -140,13 +145,13 @@ function addOperationData(doc: jsPDF, detail: AuditDetail, y: number) {
       ["Estado final", buildOverallState(detail)],
     ],
     [
-      ["Nombre conductor", detail.operacion.conductor || valueFrom(fsu01, "nombre_conductor")],
-      ["C.C.", valueFrom(fsu01, "numero_cedula")],
+      ["Nombre conductor", driverIdentity.name],
+      ["C.C.", driverIdentity.document],
       ["Placa cabezote", detail.operacion.placa],
     ],
     [
       ["Empresa transportadora", detail.operacion.empresa_transportadora || ""],
-      ["Remolque / contenedor", valueFrom(fsu02, "numero_remolque_contenedor")],
+      ["Remolque / contenedor", inspectionValue("numero_remolque_contenedor")],
       ["Placa / contenedor salida", valueFrom(fsu04, "placa_numero_contenedor")],
     ],
     [
@@ -155,9 +160,9 @@ function addOperationData(doc: jsPDF, detail: AuditDetail, y: number) {
       ["Responsable ingreso", valueFrom(fsu01, "responsable")],
     ],
     [
-      ["Responsable inspeccion", valueFrom(fsu02, "responsable_inspeccion")],
-      ["Resultado inspeccion", valueFrom(fsu02, "resultado_final_inspeccion")],
-      ["Autoriza cargue", valueFrom(fsu02, "se_autoriza_para_cargue")],
+      ["Responsable inspeccion", inspectionValue("responsable_inspeccion")],
+      ["Resultado inspeccion", inspectionValue("resultado_final_inspeccion")],
+      ["Autoriza cargue", inspectionValue("se_autoriza_para_cargue")],
     ],
   ];
 
@@ -166,6 +171,7 @@ function addOperationData(doc: jsPDF, detail: AuditDetail, y: number) {
 
 function addProcessSummary(doc: jsPDF, detail: AuditDetail, y: number) {
   y = addBand(doc, "2. RESUMEN DEL PROCESO", y);
+  const requiresFullFlow = requiresInspectionAndLoading(detail);
 
   const rows = [
     {
@@ -178,16 +184,22 @@ function addProcessSummary(doc: jsPDF, detail: AuditDetail, y: number) {
     {
       form: "F-SU-02",
       name: FORM_TITLES["F-SU-02"],
-      state: detail.operacion.estado_inspeccion,
-      result: valueFrom(detail.fsu02, "resultado_final_inspeccion"),
-      observations: valueFrom(detail.fsu02, "descripcion_novedad"),
+      state: requiresFullFlow ? detail.operacion.estado_inspeccion : "no_aplica",
+      result: requiresFullFlow
+        ? valueFrom(detail.fsu02, "resultado_final_inspeccion")
+        : "No aplica",
+      observations: requiresFullFlow
+        ? valueFrom(detail.fsu02, "descripcion_novedad")
+        : "No aplica",
     },
     {
       form: "F-SU-03",
       name: FORM_TITLES["F-SU-03"],
-      state: detail.operacion.estado_cargue,
-      result: valueFrom(detail.fsu03, "se_realizo_cargue"),
-      observations: valueFrom(detail.fsu03, "observaciones_cargue"),
+      state: requiresFullFlow ? detail.operacion.estado_cargue : "no_aplica",
+      result: requiresFullFlow ? valueFrom(detail.fsu03, "se_realizo_cargue") : "No aplica",
+      observations: requiresFullFlow
+        ? valueFrom(detail.fsu03, "observaciones_cargue")
+        : "No aplica",
     },
     {
       form: "F-SU-04",
@@ -477,7 +489,9 @@ function buildFormRows(record: Record<string, unknown>) {
     "destino",
   ]);
 
-  return Object.entries(record)
+  const normalizedRecord = normalizeRecordForDisplay(record);
+
+  return Object.entries(normalizedRecord)
     .filter(([key, value]) => !blockedKeys.has(key) && !key.endsWith("_url") && value !== null)
     .map(([key, value], index) => ({
       number: String(index + 1),
@@ -485,6 +499,54 @@ function buildFormRows(record: Record<string, unknown>) {
       complies: isObservationKey(key) ? "" : formatValue(value),
       observations: isObservationKey(key) ? formatValue(value) : "",
     }));
+}
+
+function normalizeRecordForDisplay(record: Record<string, unknown>) {
+  const normalized = { ...record };
+  const driverIdentity = normalizeDriverIdentity(
+    formatRawValue(record.nombre_conductor),
+    formatRawValue(record.numero_cedula),
+  );
+
+  if (driverIdentity.wasSwapped) {
+    normalized.nombre_conductor = driverIdentity.name;
+    normalized.numero_cedula = driverIdentity.document;
+  }
+
+  return normalized;
+}
+
+function getDriverIdentity(detail: AuditDetail) {
+  const fsu01Name = valueFrom(detail.fsu01, "nombre_conductor");
+  const fsu01Document = valueFrom(detail.fsu01, "numero_cedula");
+  const normalized = normalizeDriverIdentity(
+    fsu01Name || detail.operacion.conductor || "",
+    fsu01Document,
+  );
+
+  return {
+    name: normalized.name || "Sin dato",
+    document: normalized.document || "Sin dato",
+  };
+}
+
+function normalizeDriverIdentity(name: string, document: string) {
+  const shouldSwap = looksLikeDocument(name) && looksLikePersonName(document);
+
+  return {
+    name: shouldSwap ? document : name,
+    document: shouldSwap ? name : document,
+    wasSwapped: shouldSwap,
+  };
+}
+
+function looksLikeDocument(value: string) {
+  const compact = value.replace(/\D/g, "");
+  return compact.length >= 5 && compact.length >= value.trim().length * 0.65;
+}
+
+function looksLikePersonName(value: string) {
+  return /[a-záéíóúñü]/i.test(value) && !looksLikeDocument(value);
 }
 
 function addPageFooters(doc: jsPDF, operationName: string) {
@@ -523,14 +585,20 @@ function drawImagePlaceholder(
 }
 
 function buildOverallState(detail: AuditDetail) {
-  const states = [
-    detail.operacion.estado_ingreso,
-    detail.operacion.estado_inspeccion,
-    detail.operacion.estado_cargue,
-    detail.operacion.estado_salida,
-  ];
+  const states = requiresInspectionAndLoading(detail)
+    ? [
+        detail.operacion.estado_ingreso,
+        detail.operacion.estado_inspeccion,
+        detail.operacion.estado_cargue,
+        detail.operacion.estado_salida,
+      ]
+    : [detail.operacion.estado_ingreso, detail.operacion.estado_salida];
 
-  return states.every((state) => state === "completo") ? "Completo" : "En proceso";
+  return states.every((state) => state === "completo") ? "Completado" : "En proceso";
+}
+
+function requiresInspectionAndLoading(detail: AuditDetail) {
+  return valueFrom(detail.fsu01, "tipo_operacion") === TIPO_OPERACION_CONTINUA_FLUJO;
 }
 
 function collectAuditEvidences(detail: AuditDetail): AuditEvidence[] {
@@ -668,6 +736,14 @@ function formatLabel(key: string) {
 function formatValue(value: unknown) {
   if (typeof value === "boolean") {
     return value ? "SI" : "NO";
+  }
+
+  return String(value);
+}
+
+function formatRawValue(value: unknown) {
+  if (value === null || value === undefined) {
+    return "";
   }
 
   return String(value);
