@@ -26,6 +26,7 @@ const initialForm: Fsu01Input = {
   tipoOperacionOtro: "",
   placa: "",
   tipoVehiculo: "",
+  tipoVehiculoOtro: "",
   empresaTransportadora: "",
   origen: "",
   destino: "",
@@ -217,6 +218,15 @@ export function Fsu01Form() {
               />
             </div>
 
+            {form.tipoVehiculo === "Otro" ? (
+              <InputField
+                label='Si seleccionaste "Otro", especifica el tipo de vehiculo'
+                value={form.tipoVehiculoOtro}
+                onChange={(value) => setField("tipoVehiculoOtro", value)}
+                required
+              />
+            ) : null}
+
             <div className="grid gap-4 md:grid-cols-2">
               <InputField
                 label="Empresa transportadora"
@@ -364,6 +374,7 @@ async function submitFsu01(form: Fsu01Input, files: EvidenciasInput) {
   payload.set("tipoOperacionOtro", form.tipoOperacionOtro);
   payload.set("placa", form.placa);
   payload.set("tipoVehiculo", form.tipoVehiculo);
+  payload.set("tipoVehiculoOtro", form.tipoVehiculoOtro);
   payload.set("empresaTransportadora", form.empresaTransportadora);
   payload.set("origen", form.origen);
   payload.set("destino", form.destino);

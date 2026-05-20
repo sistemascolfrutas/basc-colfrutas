@@ -189,6 +189,72 @@ export async function requireOperacionCargueWithClient(
   return operacion;
 }
 
+export async function requireOperacionSalidaWithClient(
+  supabase: SupabaseClient,
+  input: Pick<GetOrCreateOperacionInput, "placa" | "fecha">,
+) {
+  const nombreOperacion = buildNombreOperacion(input.placa, input.fecha);
+  const operacion =
+    await getOperacionMaestraByNombreOperacionWithClient(supabase, nombreOperacion);
+  const ingreso = await getExistingFormRecordWithClient(
+    supabase,
+    "reg_fsu01_ingreso",
+    nombreOperacion,
+  );
+
+  if (!operacion || !ingreso) {
+    throw new Error(
+      "No encontramos un F-SU-01 registrado con esa placa y fecha. Completa el ingreso antes de registrar la salida.",
+    );
+  }
+
+  const requiereFlujoCompleto =
+    ingreso.tipo_operacion === TIPO_OPERACION_CONTINUA_FLUJO;
+
+  if (requiereFlujoCompleto) {
+    const cargue = await getExistingFormRecordWithClient(
+      supabase,
+      "reg_fsu03_cargue_aseguramiento",
+      nombreOperacion,
+    );
+
+    if (!cargue) {
+      throw new Error(
+        "Esta operacion requiere F-SU-02 y F-SU-03 antes de registrar la salida.",
+      );
+    }
+
+    await syncOperacionStatusWithClient(supabase, nombreOperacion, {
+      estado_ingreso: "completo",
+      estado_inspeccion: "completo",
+      estado_cargue: "completo",
+    });
+  } else {
+    await syncOperacionStatusWithClient(supabase, nombreOperacion, {
+      estado_ingreso: "completo",
+    });
+  }
+
+  return {
+    operacion,
+    requiereFlujoCompleto,
+  };
+}
+
+export function buildSalidaStatusPatch(requiereFlujoCompleto: boolean) {
+  return requiereFlujoCompleto
+    ? {
+        estado_ingreso: "completo" as OperacionEstado,
+        estado_inspeccion: "completo" as OperacionEstado,
+        estado_cargue: "completo" as OperacionEstado,
+        estado_salida: "completo" as OperacionEstado,
+      }
+    : {
+        estado_ingreso: "completo" as OperacionEstado,
+        estado_salida: "completo" as OperacionEstado,
+      };
+}
+
 export async function getPendingOperacionesForFormWithClient(
   supabase: SupabaseClient,
   form: PendingOperacionForm,
@@ -216,16 +282,7 @@ export async function getPendingOperacionesForFormWithClient(
     );
   }
 
-  return getPendingFromRecordsWithClient(
-    supabase,
-    "reg_fsu03_cargue_aseguramiento",
-    "reg_fsu04_salida",
-    {
-      estado_ingreso: "completo",
-      estado_inspeccion: "completo",
-      estado_cargue: "completo",
-    },
-  );
+  return getPendingSalidaOperacionesWithClient(supabase);
 }
 
 export async function syncOperacionStatusWithClient(
@@ -331,6 +388,83 @@ async function getPendingFromRecordsWithClient(
       syncOperacionStatusWithClient(supabase, nombreOperacion, statusPatch),
     ),
   );
+
+  const order = new Map(pendingNames.map((name, index) => [name, index]));
+  return (operaciones ?? []).sort(
+    (a, b) =>
+      (order.get(a.nombre_operacion) ?? 0) -
+      (order.get(b.nombre_operacion) ?? 0),
+  );
+}
+
+async function getPendingSalidaOperacionesWithClient(supabase: SupabaseClient) {
+  const [ingresosRes, carguesRes, salidasRes] = await Promise.all([
+    supabase
+      .from("reg_fsu01_ingreso")
+      .select("nombre_operacion,tipo_operacion")
+      .order("created_at", { ascending: false })
+      .limit(80)
+      .returns<Array<{ nombre_operacion: string; tipo_operacion?: string }>>(),
+    supabase
+      .from("reg_fsu03_cargue_aseguramiento")
+      .select("nombre_operacion")
+      .order("created_at", { ascending: false })
+      .limit(80)
+      .returns<Array<{ nombre_operacion: string }>>(),
+    supabase
+      .from("reg_fsu04_salida")
+      .select("nombre_operacion")
+      .returns<Array<{ nombre_operacion: string }>>(),
+  ]);
+
+  if (ingresosRes.error) {
+    throw new Error(
+      `No fue posible consultar reg_fsu01_ingreso: ${ingresosRes.error.message}`,
+    );
+  }
+
+  if (carguesRes.error) {
+    throw new Error(
+      `No fue posible consultar reg_fsu03_cargue_aseguramiento: ${carguesRes.error.message}`,
+    );
+  }
+
+  if (salidasRes.error) {
+    throw new Error(
+      `No fue posible consultar reg_fsu04_salida: ${salidasRes.error.message}`,
+    );
+  }
+
+  const completedNames = new Set(
+    (salidasRes.data ?? []).map((record) => record.nombre_operacion),
+  );
+  const directSalidaNames = (ingresosRes.data ?? [])
+    .filter((record) => record.tipo_operacion !== TIPO_OPERACION_CONTINUA_FLUJO)
+    .map((record) => record.nombre_operacion);
+  const fullFlowSalidaNames = (carguesRes.data ?? []).map(
+    (record) => record.nombre_operacion,
+  );
+  const pendingNames = Array.from(
+    new Set([...directSalidaNames, ...fullFlowSalidaNames]),
+  ).filter((name) => !completedNames.has(name));
+
+  if (pendingNames.length === 0) {
+    return [];
+  }
+
+  const { data: operaciones, error: operacionesError } = await supabase
+    .from("operaciones_maestra")
+    .select(
+      "id,nombre_operacion,placa,fecha,conductor,empresa_transportadora,estado_ingreso,estado_inspeccion,estado_cargue,estado_salida,ruta_evidencias_folder",
+    )
+    .in("nombre_operacion", pendingNames)
+    .returns<OperacionMaestraRecord[]>();
+
+  if (operacionesError) {
+    throw new Error(
+      `No fue posible cargar operaciones pendientes: ${operacionesError.message}`,
+    );
+  }
 
   const order = new Map(pendingNames.map((name, index) => [name, index]));
   return (operaciones ?? []).sort(

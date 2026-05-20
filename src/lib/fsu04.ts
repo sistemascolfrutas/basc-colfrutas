@@ -9,7 +9,8 @@ import {
   validateRequiredText,
 } from "@/lib/form-validation";
 import {
-  requireOperacionCargueWithClient,
+  buildSalidaStatusPatch,
+  requireOperacionSalidaWithClient,
   syncOperacionStatusWithClient,
 } from "@/lib/operaciones-maestra";
 import {
@@ -60,10 +61,11 @@ export async function createFsu04SalidaWithClient(
   const fechaOperacion = getOperationDateFromDateTime(input.fechaHoraSalida);
   const placa = normalizePlate(input.placaNumeroContenedor);
 
-  const operacion = await requireOperacionCargueWithClient(supabase, {
-    placa,
-    fecha: fechaOperacion,
-  });
+  const { operacion, requiereFlujoCompleto } =
+    await requireOperacionSalidaWithClient(supabase, {
+      placa,
+      fecha: fechaOperacion,
+    });
 
   const nombreOperacion = buildNombreOperacion(placa, fechaOperacion);
   const evidenciasFolder =
@@ -90,12 +92,11 @@ export async function createFsu04SalidaWithClient(
     "reg_fsu04_salida",
     payload,
   );
-  await syncOperacionStatusWithClient(supabase, nombreOperacion, {
-    estado_ingreso: "completo",
-    estado_inspeccion: "completo",
-    estado_cargue: "completo",
-    estado_salida: "completo",
-  });
+  await syncOperacionStatusWithClient(
+    supabase,
+    nombreOperacion,
+    buildSalidaStatusPatch(requiereFlujoCompleto),
+  );
 
   return data;
 }

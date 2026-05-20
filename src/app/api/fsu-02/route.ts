@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { createFsu02InspeccionWithClient, type EvidenciasFsu02Input, type Fsu02Input } from "@/lib/fsu02";
+import { syncOperacionStatusWithClient } from "@/lib/operaciones-maestra";
+import { buildNombreOperacion, normalizeOperationDate, normalizePlate } from "@/lib/operations";
 import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
 import { getResponsableOptionsWithClient } from "@/lib/responsables";
 import { getAuthorizedServerClient } from "@/lib/server-auth";
@@ -62,10 +64,22 @@ export async function POST(request: Request) {
       fotoHallazgoNovedad: getFile(formData, "fotoHallazgoNovedad"),
     };
 
-    const responsableOptions = await getResponsableOptionsWithClient(createAdminClient());
+    const adminClient = createAdminClient();
+    const responsableOptions = await getResponsableOptionsWithClient(adminClient);
     const data = await createFsu02InspeccionWithClient(supabase, input, evidencias, {
       responsableOptions,
     });
+    await syncOperacionStatusWithClient(
+      adminClient,
+      buildNombreOperacion(
+        normalizePlate(input.placa),
+        normalizeOperationDate(input.fechaInspeccion),
+      ),
+      {
+        estado_ingreso: "completo",
+        estado_inspeccion: "completo",
+      },
+    );
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json(

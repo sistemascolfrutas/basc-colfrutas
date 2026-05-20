@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 import { createFsu03CargueWithClient, type EvidenciasFsu03Input, type Fsu03Input } from "@/lib/fsu03";
 import { getFsu03ParticipantOptionsWithClient } from "@/lib/fsu03-participants";
+import { syncOperacionStatusWithClient } from "@/lib/operaciones-maestra";
+import { buildNombreOperacion, normalizeOperationDate, normalizePlate } from "@/lib/operations";
 import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
 import { getAuthorizedServerClient } from "@/lib/server-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -45,11 +47,24 @@ export async function POST(request: Request) {
       fotoCargue100: getFile(formData, "fotoCargue100"),
     };
 
+    const adminClient = createAdminClient();
     const participantOptions =
-      await getFsu03ParticipantOptionsWithClient(createAdminClient());
+      await getFsu03ParticipantOptionsWithClient(adminClient);
     const data = await createFsu03CargueWithClient(supabase, input, evidencias, {
       participantOptions,
     });
+    await syncOperacionStatusWithClient(
+      adminClient,
+      buildNombreOperacion(
+        normalizePlate(input.placa),
+        normalizeOperationDate(input.fechaCargue),
+      ),
+      {
+        estado_ingreso: "completo",
+        estado_inspeccion: "completo",
+        estado_cargue: "completo",
+      },
+    );
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json(

@@ -52,6 +52,7 @@ export type Fsu01Input = {
   tipoOperacionOtro: string;
   placa: string;
   tipoVehiculo: (typeof TIPO_VEHICULO_OPTIONS)[number] | "";
+  tipoVehiculoOtro: string;
   empresaTransportadora: string;
   origen: string;
   destino: string;
@@ -134,6 +135,8 @@ export async function createFsu01IngresoWithClient(
     tipo_operacion_otro: input.tipoOperacionOtro.trim() || null,
     placa,
     tipo_vehiculo: input.tipoVehiculo,
+    tipo_vehiculo_otro:
+      input.tipoVehiculo === "Otro" ? input.tipoVehiculoOtro.trim() || null : null,
     empresa_transportadora: input.empresaTransportadora.trim(),
     origen: input.origen.trim(),
     destino: input.destino.trim(),
@@ -251,6 +254,13 @@ export function validateFsu01Input(
     validateRequiredText(
       input.tipoOperacionOtro,
       'El detalle de "Otro" en tipo de operacion',
+    );
+  }
+
+  if (input.tipoVehiculo === "Otro") {
+    validateRequiredText(
+      input.tipoVehiculoOtro,
+      'El detalle de "Otro" en tipo de vehiculo',
     );
   }
 

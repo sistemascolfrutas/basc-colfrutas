@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 
-import { createFsu01IngresoWithClient, type EvidenciasInput, type Fsu01Input } from "@/lib/fsu01";
+import {
+  createFsu01IngresoWithClient,
+  type EvidenciasInput,
+  type Fsu01Input,
+} from "@/lib/fsu01";
+import { syncOperacionStatusWithClient } from "@/lib/operaciones-maestra";
+import { buildNombreOperacion, normalizeOperationDate, normalizePlate } from "@/lib/operations";
 import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
 import { getResponsableOptionsWithClient } from "@/lib/responsables";
 import { getAuthorizedServerClient } from "@/lib/server-auth";
@@ -34,6 +40,7 @@ export async function POST(request: Request) {
       tipoOperacionOtro: String(formData.get("tipoOperacionOtro") ?? ""),
       placa: String(formData.get("placa") ?? ""),
       tipoVehiculo: String(formData.get("tipoVehiculo") ?? "") as Fsu01Input["tipoVehiculo"],
+      tipoVehiculoOtro: String(formData.get("tipoVehiculoOtro") ?? ""),
       empresaTransportadora: String(formData.get("empresaTransportadora") ?? ""),
       origen: String(formData.get("origen") ?? ""),
       destino: String(formData.get("destino") ?? ""),
@@ -52,10 +59,23 @@ export async function POST(request: Request) {
       fotoInteriorUnidadCarga: getFile(formData, "fotoInteriorUnidadCarga"),
     };
 
-    const responsableOptions = await getResponsableOptionsWithClient(createAdminClient());
+    const adminClient = createAdminClient();
+    const responsableOptions = await getResponsableOptionsWithClient(adminClient);
     const data = await createFsu01IngresoWithClient(supabase, input, evidencias, {
       responsableOptions,
     });
+    await syncOperacionStatusWithClient(
+      adminClient,
+      buildNombreOperacion(
+        normalizePlate(input.placa),
+        normalizeOperationDate(input.fechaRegistro),
+      ),
+      {
+        estado_ingreso: "completo",
+        conductor: input.nombreConductor.trim(),
+        empresa_transportadora: input.empresaTransportadora.trim(),
+      },
+    );
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json(
