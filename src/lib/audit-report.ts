@@ -467,6 +467,8 @@ function addTable(
 function buildFormRows(record: Record<string, unknown>) {
   const blockedKeys = new Set([
     "id",
+    "user_id",
+    "auth_user_id",
     "created_at",
     "updated_at",
     "nombre_operacion",
@@ -478,7 +480,7 @@ function buildFormRows(record: Record<string, unknown>) {
     .map(([key, value], index) => ({
       number: String(index + 1),
       criterion: formatLabel(key),
-      complies: formatValue(value),
+      complies: isObservationKey(key) ? "" : formatValue(value),
       observations: isObservationKey(key) ? formatValue(value) : "",
     }));
 }

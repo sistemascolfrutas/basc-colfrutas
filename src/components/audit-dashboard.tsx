@@ -309,25 +309,20 @@ function ResultsTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-[980px] w-full border-collapse text-left text-sm">
+        <table className="w-full min-w-[680px] border-collapse text-left text-sm">
           <thead className="bg-slate-50 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
             <tr>
               <th className="px-4 py-3">Operacion</th>
               <th className="px-4 py-3">Placa</th>
               <th className="px-4 py-3">Fecha</th>
               <th className="px-4 py-3">Conductor</th>
-              <th className="px-4 py-3">Transportadora</th>
-              <th className="px-4 py-3">Ingreso</th>
-              <th className="px-4 py-3">Inspeccion</th>
-              <th className="px-4 py-3">Cargue</th>
-              <th className="px-4 py-3">Salida</th>
-              <th className="px-4 py-3">Creada</th>
+              <th className="px-4 py-3">Estado</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {results.length === 0 ? (
               <tr>
-                <td className="px-4 py-8 text-center text-slate-500" colSpan={10}>
+                <td className="px-4 py-8 text-center text-slate-500" colSpan={5}>
                   {isPending ? "Cargando informacion..." : "Sin registros para mostrar."}
                 </td>
               </tr>
@@ -363,23 +358,8 @@ function ResultsTable({
                     <td className="px-4 py-4 text-slate-700">
                       {item.conductor || "Sin dato"}
                     </td>
-                    <td className="px-4 py-4 text-slate-700">
-                      {item.empresa_transportadora || "Sin dato"}
-                    </td>
                     <td className="px-4 py-4">
-                      <InlineState value={item.estado_ingreso} />
-                    </td>
-                    <td className="px-4 py-4">
-                      <InlineState value={item.estado_inspeccion} />
-                    </td>
-                    <td className="px-4 py-4">
-                      <InlineState value={item.estado_cargue} />
-                    </td>
-                    <td className="px-4 py-4">
-                      <InlineState value={item.estado_salida} />
-                    </td>
-                    <td className="px-4 py-4 text-slate-600">
-                      {formatDateTime(item.created_at)}
+                      <InlineState value={getOverallState(item)} />
                     </td>
                   </tr>
                 );
@@ -403,6 +383,8 @@ function DetailCard({
   onGeneratePdf: (detail: AuditDetail) => Promise<void>;
   isGeneratingPdf: boolean;
 }) {
+  const [activeForm, setActiveForm] = useState<AuditEvidence["group"]>("F-SU-01");
+
   if (!detail) {
     return (
       <section className="rounded-[2rem] border border-slate-200 bg-white/90 p-8 shadow-[0_20px_60px_rgba(15,23,42,0.07)]">
@@ -417,6 +399,9 @@ function DetailCard({
   }
 
   const evidencias = collectEvidencias(detail);
+  const activeEvidenceItems = evidencias.filter(
+    (evidence) => evidence.group === activeForm,
+  );
 
   return (
     <>
@@ -456,7 +441,7 @@ function DetailCard({
           />
           <DataChip
             label="Creada"
-            value={detail.operacion.created_at || "Sin dato"}
+            value={formatDateTime(detail.operacion.created_at)}
           />
         </div>
 
@@ -471,55 +456,38 @@ function DetailCard({
         </div>
       </section>
 
-      <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-        <FormStatusCard title="F-SU-01" record={detail.fsu01} />
-        <FormStatusCard title="F-SU-02" record={detail.fsu02} />
-        <FormStatusCard title="F-SU-03" record={detail.fsu03} />
-        <FormStatusCard title="F-SU-04" record={detail.fsu04} />
-      </section>
+      <FormTabs
+        activeForm={activeForm}
+        detail={detail}
+        onChange={setActiveForm}
+      />
 
       <section className="rounded-[2rem] bg-slate-950 p-6 text-slate-100 shadow-[0_25px_80px_rgba(2,6,23,0.28)]">
-        <h3 className="text-xl font-semibold">Evidencias detectadas</h3>
-        <p className="mt-2 text-sm leading-6 text-slate-300">
-          Vista consolidada de fotos y soportes encontrados en los formularios.
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-xl font-semibold">Evidencias</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              Soportes fotográficos asociados al formulario seleccionado.
+            </p>
+          </div>
+          <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-sky-300">
+            {activeForm}
+          </span>
+        </div>
 
-        {evidencias.length === 0 ? (
+        {activeEvidenceItems.length === 0 ? (
           <div className="mt-6 rounded-2xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300">
-            No se detectaron URLs de evidencia.
+            No se detectaron evidencias para este formulario.
           </div>
         ) : (
-          <div className="mt-6 space-y-6">
-            {(["F-SU-01", "F-SU-02", "F-SU-03", "F-SU-04"] as const).map((group) => {
-              const items = evidencias.filter((evidence) => evidence.group === group);
-
-              if (items.length === 0) {
-                return null;
-              }
-
-              return (
-                <section key={group}>
-                  <div className="flex items-center justify-between gap-4">
-                    <h4 className="text-sm font-bold uppercase tracking-[0.22em] text-sky-300">
-                      {group}
-                    </h4>
-                    <span className="text-xs text-slate-400">
-                      {items.length} evidencia(s)
-                    </span>
-                  </div>
-
-                  <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {items.map((item) => (
-                      <EvidenceCard
-                        key={`${item.group}-${item.key}`}
-                        item={item}
-                        onPreview={() => onPreviewEvidence(item)}
-                      />
-                    ))}
-                  </div>
-                </section>
-              );
-            })}
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {activeEvidenceItems.map((item) => (
+              <EvidenceCard
+                key={`${item.group}-${item.key}`}
+                item={item}
+                onPreview={() => onPreviewEvidence(item)}
+              />
+            ))}
           </div>
         )}
       </section>
@@ -554,48 +522,97 @@ function mapEvidenceGroup(
     }));
 }
 
-function FormStatusCard({
-  title,
-  record,
+function FormTabs({
+  activeForm,
+  detail,
+  onChange,
 }: {
-  title: string;
-  record: Record<string, unknown> | null;
+  activeForm: AuditEvidence["group"];
+  detail: AuditDetail;
+  onChange: (form: AuditEvidence["group"]) => void;
 }) {
-  const fields = buildSummaryFields(record);
+  const forms: Array<{
+    key: AuditEvidence["group"];
+    title: string;
+    record: Record<string, unknown> | null;
+  }> = [
+    { key: "F-SU-01", title: "Ingreso", record: detail.fsu01 },
+    { key: "F-SU-02", title: "Inspeccion", record: detail.fsu02 },
+    { key: "F-SU-03", title: "Cargue", record: detail.fsu03 },
+    { key: "F-SU-04", title: "Salida", record: detail.fsu04 },
+  ];
+  const current = forms.find((form) => form.key === activeForm) ?? forms[0];
+  const fields = buildSummaryFields(current.record);
 
   return (
-    <article className="rounded-[2rem] border border-slate-200 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.07)]">
-      <h3 className="text-lg font-semibold text-slate-950">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-slate-600">
-        {record ? "Formulario encontrado." : "Formulario aun no registrado."}
-      </p>
+    <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white/90 shadow-[0_20px_60px_rgba(15,23,42,0.07)]">
+      <div className="border-b border-slate-200 px-6 pt-5">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="pb-4">
+            <h3 className="text-xl font-semibold text-slate-950">
+              Formularios de la operacion
+            </h3>
+            <p className="mt-1 text-sm text-slate-600">
+              Revisa un formulario a la vez para evitar informacion duplicada.
+            </p>
+          </div>
+          <div className="flex max-w-full gap-2 overflow-x-auto pb-3">
+            {forms.map((form) => {
+              const isActive = form.key === activeForm;
 
-      <div className="mt-4 space-y-3">
-        {!record ? (
-          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              return (
+                <button
+                  key={form.key}
+                  type="button"
+                  onClick={() => onChange(form.key)}
+                  className={`min-w-[112px] rounded-t-2xl border px-4 py-3 text-left transition ${
+                    isActive
+                      ? "border-slate-950 bg-slate-950 text-white"
+                      : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-white"
+                  }`}
+                >
+                  <span className="block text-xs font-bold uppercase tracking-[0.18em]">
+                    {form.key}
+                  </span>
+                  <span className="mt-1 block text-sm font-semibold">
+                    {form.title}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="p-6">
+        {!current.record ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-6 text-sm text-slate-600">
             Sin datos cargados por ahora.
           </div>
         ) : fields.length === 0 ? (
-          <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          <div className="rounded-2xl bg-slate-50 px-5 py-6 text-sm text-slate-600">
             Sin campos resumibles.
           </div>
         ) : (
-          fields.map((field) => (
-            <div
-              key={field.label}
-              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
-            >
-              <span className="block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-                {field.label}
-              </span>
-              <p className="mt-2 break-words text-sm font-medium text-slate-900">
-                {field.value}
-              </p>
-            </div>
-          ))
+          <div className="overflow-hidden rounded-2xl border border-slate-200">
+            <table className="w-full border-collapse text-sm">
+              <tbody className="divide-y divide-slate-100">
+                {fields.map((field) => (
+                  <tr key={field.label} className="align-top">
+                    <th className="w-[38%] bg-slate-50 px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                      {field.label}
+                    </th>
+                    <td className="break-words px-4 py-3 font-medium text-slate-900">
+                      {field.value}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
-    </article>
+    </section>
   );
 }
 
@@ -699,6 +716,8 @@ function buildSummaryFields(record: Record<string, unknown> | null) {
 
   const blockedKeys = new Set([
     "id",
+    "user_id",
+    "auth_user_id",
     "created_at",
     "updated_at",
     "nombre_operacion",
@@ -707,7 +726,6 @@ function buildSummaryFields(record: Record<string, unknown> | null) {
 
   return Object.entries(record)
     .filter(([key, value]) => !blockedKeys.has(key) && !key.endsWith("_url") && value !== null)
-    .slice(0, 6)
     .map(([key, value]) => ({
       label: humanizeFieldLabel(key),
       value: formatSummaryValue(value),
@@ -730,6 +748,17 @@ function formatSummaryValue(value: unknown) {
 
 function formatEstado(value: string) {
   return value.replaceAll("_", " ");
+}
+
+function getOverallState(item: OperacionMaestraAudit) {
+  const states = [
+    item.estado_ingreso,
+    item.estado_inspeccion,
+    item.estado_cargue,
+    item.estado_salida,
+  ];
+
+  return states.every((state) => state === "completo") ? "completo" : "pendiente";
 }
 
 function formatDateTime(value?: string) {
