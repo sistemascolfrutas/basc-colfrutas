@@ -594,15 +594,15 @@ function FormTabs({
             Sin campos resumibles.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-slate-200">
-            <table className="w-full border-collapse text-sm">
+          <div className="max-h-[520px] overflow-auto rounded-2xl border border-slate-200">
+            <table className="w-full table-fixed border-collapse text-sm">
               <tbody className="divide-y divide-slate-100">
                 {fields.map((field) => (
                   <tr key={field.label} className="align-top">
-                    <th className="w-[38%] bg-slate-50 px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                    <th className="w-[34%] break-words bg-slate-50 px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
                       {field.label}
                     </th>
-                    <td className="break-words px-4 py-3 font-medium text-slate-900">
+                    <td className="break-words px-4 py-3 font-medium leading-6 text-slate-900">
                       {field.value}
                     </td>
                   </tr>
@@ -722,6 +722,8 @@ function buildSummaryFields(record: Record<string, unknown> | null) {
     "updated_at",
     "nombre_operacion",
     "placa",
+    "origen",
+    "destino",
   ]);
 
   return Object.entries(record)

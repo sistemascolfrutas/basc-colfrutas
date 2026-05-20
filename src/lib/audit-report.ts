@@ -150,14 +150,14 @@ function addOperationData(doc: jsPDF, detail: AuditDetail, y: number) {
       ["Placa / contenedor salida", valueFrom(fsu04, "placa_numero_contenedor")],
     ],
     [
-      ["Origen", valueFrom(fsu01, "origen")],
-      ["Destino", valueFrom(fsu01, "destino")],
+      ["Tipo operacion", joinOther(valueFrom(fsu01, "tipo_operacion"), valueFrom(fsu01, "tipo_operacion_otro"))],
       ["Tipo vehiculo", joinOther(valueFrom(fsu01, "tipo_vehiculo"), valueFrom(fsu01, "tipo_vehiculo_otro"))],
+      ["Responsable ingreso", valueFrom(fsu01, "responsable")],
     ],
     [
-      ["Tipo operacion", joinOther(valueFrom(fsu01, "tipo_operacion"), valueFrom(fsu01, "tipo_operacion_otro"))],
-      ["Responsable ingreso", valueFrom(fsu01, "responsable")],
       ["Responsable inspeccion", valueFrom(fsu02, "responsable_inspeccion")],
+      ["Resultado inspeccion", valueFrom(fsu02, "resultado_final_inspeccion")],
+      ["Autoriza cargue", valueFrom(fsu02, "se_autoriza_para_cargue")],
     ],
   ];
 
@@ -473,6 +473,8 @@ function buildFormRows(record: Record<string, unknown>) {
     "updated_at",
     "nombre_operacion",
     "placa",
+    "origen",
+    "destino",
   ]);
 
   return Object.entries(record)
