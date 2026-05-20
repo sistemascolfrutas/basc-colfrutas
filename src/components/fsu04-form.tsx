@@ -117,9 +117,7 @@ export function Fsu04Form() {
           onSelect={(operacion) =>
             setForm((current) => ({
               ...current,
-              fechaHoraSalida: `${operacion.fecha}T${
-                current.fechaHoraSalida.split("T")[1] || "00:00"
-              }`,
+              fechaHoraSalida: `${operacion.fecha}T${getCurrentTimeForInput()}`,
               placaNumeroContenedor: operacion.placa,
             }))
           }
@@ -192,6 +190,14 @@ export function Fsu04Form() {
       />
     </div>
   );
+}
+
+function getCurrentTimeForInput() {
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+
+  return `${hours}:${minutes}`;
 }
 
 async function submitFsu04(form: Fsu04Input, files: EvidenciasFsu04Input) {
