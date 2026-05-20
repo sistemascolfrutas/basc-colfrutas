@@ -59,9 +59,13 @@ export async function listResponsablesWithClient(
 }
 
 export async function getResponsableOptionsWithClient(supabase: SupabaseClient) {
-  const responsables = await listResponsablesWithClient(supabase, {
+  let responsables = await listResponsablesWithClient(supabase, {
     onlyActive: true,
   });
+
+  if (responsables.length === 0) {
+    responsables = await listResponsablesWithClient(supabase);
+  }
 
   return responsables.map((item) => item.nombre);
 }

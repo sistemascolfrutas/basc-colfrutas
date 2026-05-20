@@ -164,13 +164,15 @@ export async function createFsu01IngresoWithClient(
 }
 
 function validateSelectedResponsable(value: string, options: string[]) {
+  const selectedValue = value.trim();
+
   if (options.length === 0) {
     throw new Error(
       "No hay responsables activos. Solicita al administrador configurar el catalogo.",
     );
   }
 
-  if (!options.includes(value)) {
+  if (!options.some((option) => option.trim() === selectedValue)) {
     throw new Error("El responsable seleccionado ya no esta disponible. Vuelve a elegirlo.");
   }
 }

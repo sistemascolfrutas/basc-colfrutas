@@ -214,7 +214,9 @@ function validateSelectedParticipants(
     ["El participante 2", input.participante2],
     ["El participante 3", input.participante3],
   ] as const) {
-    if (!options.includes(value)) {
+    const selectedValue = value.trim();
+
+    if (!options.some((option) => option.trim() === selectedValue)) {
       throw new Error(`${label} seleccionado ya no esta disponible. Vuelve a elegirlo.`);
     }
   }

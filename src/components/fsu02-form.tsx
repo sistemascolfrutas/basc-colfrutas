@@ -143,6 +143,13 @@ export function Fsu02Form() {
           setForm({ ...initialForm, ...draft.form });
           setFiles({ ...initialFiles, ...draft.files });
           setMessage("Se recupero un borrador local de F-SU-02.");
+          window.setTimeout(() => {
+            setMessage((current) =>
+              current === "Se recupero un borrador local de F-SU-02."
+                ? null
+                : current,
+            );
+          }, 3500);
         }
       } catch {
         if (active) {

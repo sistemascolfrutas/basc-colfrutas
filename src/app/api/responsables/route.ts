@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getResponsableOptionsWithClient } from "@/lib/responsables";
 import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
 import { getAuthorizedServerClient } from "@/lib/server-auth";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { tryCreateAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(request: Request) {
   const rateLimit = consumeRateLimit(`api:responsables:${getClientIp(request.headers)}`, {
@@ -17,13 +17,15 @@ export async function GET(request: Request) {
     );
   }
 
-  const { errorResponse } = await getAuthorizedServerClient();
-  if (errorResponse) {
+  const { errorResponse, supabase } = await getAuthorizedServerClient();
+  if (errorResponse || !supabase) {
     return errorResponse;
   }
 
   try {
-    const data = await getResponsableOptionsWithClient(createAdminClient());
+    const data = await getResponsableOptionsWithClient(
+      tryCreateAdminClient() ?? supabase,
+    );
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json(

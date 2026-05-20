@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getFsu03ParticipantOptionsWithClient } from "@/lib/fsu03-participants";
 import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
 import { getAuthorizedServerClient } from "@/lib/server-auth";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { tryCreateAdminClient } from "@/lib/supabase/admin";
 
 export async function GET(request: Request) {
   const rateLimit = consumeRateLimit(`api:fsu03-participants:${getClientIp(request.headers)}`, {
@@ -17,13 +17,15 @@ export async function GET(request: Request) {
     );
   }
 
-  const { errorResponse } = await getAuthorizedServerClient("fsu03");
-  if (errorResponse) {
+  const { errorResponse, supabase } = await getAuthorizedServerClient("fsu03");
+  if (errorResponse || !supabase) {
     return errorResponse;
   }
 
   try {
-    const data = await getFsu03ParticipantOptionsWithClient(createAdminClient());
+    const data = await getFsu03ParticipantOptionsWithClient(
+      tryCreateAdminClient() ?? supabase,
+    );
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json(

@@ -72,9 +72,13 @@ export async function listFsu03ParticipantsWithClient(
 export async function getFsu03ParticipantOptionsWithClient(
   supabase: SupabaseClient,
 ) {
-  const participants = await listFsu03ParticipantsWithClient(supabase, {
+  let participants = await listFsu03ParticipantsWithClient(supabase, {
     onlyActive: true,
   });
+
+  if (participants.length === 0) {
+    participants = await listFsu03ParticipantsWithClient(supabase);
+  }
 
   return participants.map(formatFsu03ParticipantOption);
 }
