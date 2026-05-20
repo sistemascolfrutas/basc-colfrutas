@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 
 import { createFsu02InspeccionWithClient, type EvidenciasFsu02Input, type Fsu02Input } from "@/lib/fsu02";
 import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
+import { getResponsableOptionsWithClient } from "@/lib/responsables";
 import { getAuthorizedServerClient } from "@/lib/server-auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   const rateLimit = consumeRateLimit(`api:fsu02:${getClientIp(request.headers)}`, {
@@ -60,7 +62,10 @@ export async function POST(request: Request) {
       fotoHallazgoNovedad: getFile(formData, "fotoHallazgoNovedad"),
     };
 
-    const data = await createFsu02InspeccionWithClient(supabase, input, evidencias);
+    const responsableOptions = await getResponsableOptionsWithClient(createAdminClient());
+    const data = await createFsu02InspeccionWithClient(supabase, input, evidencias, {
+      responsableOptions,
+    });
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json(

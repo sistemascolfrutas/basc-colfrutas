@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import { generateAuditPdf } from "@/lib/audit-report";
 import {
@@ -21,6 +21,38 @@ export function AuditDashboard() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    startTransition(async () => {
+      try {
+        const data = await searchOperacionesRequest({});
+        if (!active) {
+          return;
+        }
+
+        setResults(data);
+        setSearchMessage(
+          data.length > 0
+            ? `${data.length} operacion(es) cargadas.`
+            : "No hay operaciones registradas.",
+        );
+      } catch (error) {
+        if (!active) {
+          return;
+        }
+
+        setErrorMessage(
+          error instanceof Error ? error.message : "No fue posible consultar.",
+        );
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function handleSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -133,10 +165,26 @@ export function AuditDashboard() {
                 onClick={() => {
                   setPlaca("");
                   setFecha("");
-                  setResults([]);
                   setSelected(null);
                   setSearchMessage(null);
                   setErrorMessage(null);
+                  startTransition(async () => {
+                    try {
+                      const data = await searchOperacionesRequest({});
+                      setResults(data);
+                      setSearchMessage(
+                        data.length > 0
+                          ? `${data.length} operacion(es) cargadas.`
+                          : "No hay operaciones registradas.",
+                      );
+                    } catch (error) {
+                      setErrorMessage(
+                        error instanceof Error
+                          ? error.message
+                          : "No fue posible consultar.",
+                      );
+                    }
+                  });
                 }}
                 className="mt-3 inline-flex w-full items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
               >
@@ -156,41 +204,12 @@ export function AuditDashboard() {
               ) : null}
             </form>
 
-            <section className="rounded-[2rem] bg-slate-950 p-6 text-slate-100 shadow-[0_25px_80px_rgba(2,6,23,0.28)]">
-              <h3 className="text-xl font-semibold">Resultados</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-300">
-                Selecciona una operacion para ver el detalle consolidado.
-              </p>
-
-              <div className="mt-6 space-y-3">
-                {results.length === 0 ? (
-                  <div className="rounded-2xl bg-slate-900/80 px-4 py-3 text-sm text-slate-300">
-                    Sin resultados aun.
-                  </div>
-                ) : (
-                  results.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => handleLoadDetail(item.nombre_operacion)}
-                      className="flex w-full flex-col rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-4 text-left transition hover:border-sky-500 hover:bg-slate-900"
-                    >
-                      <span className="text-xs font-bold uppercase tracking-[0.2em] text-sky-300">
-                        {item.nombre_operacion}
-                      </span>
-                      <span className="mt-2 text-sm text-slate-100">
-                        {item.placa} | {item.fecha}
-                      </span>
-                      <span className="mt-2 text-xs text-slate-400">
-                        Ingreso: {formatEstado(item.estado_ingreso)} | Inspeccion:{" "}
-                        {formatEstado(item.estado_inspeccion)} | Cargue:{" "}
-                        {formatEstado(item.estado_cargue)}
-                      </span>
-                    </button>
-                  ))
-                )}
-              </div>
-            </section>
+            <ResultsTable
+              results={results}
+              selectedNombreOperacion={selected?.operacion.nombre_operacion ?? null}
+              isPending={isPending}
+              onSelect={handleLoadDetail}
+            />
           </section>
 
           <section className="space-y-6">
@@ -260,6 +279,117 @@ async function getOperacionAuditDetailRequest(nombreOperacion: string) {
   }
 
   return result as AuditDetail;
+}
+
+function ResultsTable({
+  results,
+  selectedNombreOperacion,
+  isPending,
+  onSelect,
+}: {
+  results: OperacionMaestraAudit[];
+  selectedNombreOperacion: string | null;
+  isPending: boolean;
+  onSelect: (nombreOperacion: string) => void;
+}) {
+  return (
+    <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white/90 shadow-[0_20px_60px_rgba(15,23,42,0.07)]">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-6 py-5">
+        <div>
+          <h3 className="text-xl font-semibold text-slate-950">
+            Informacion ingresada
+          </h3>
+          <p className="mt-1 text-sm text-slate-600">
+            Selecciona una fila para ver formularios y evidencias.
+          </p>
+        </div>
+        <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-sky-700">
+          {results.length} registro(s)
+        </span>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-[980px] w-full border-collapse text-left text-sm">
+          <thead className="bg-slate-50 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+            <tr>
+              <th className="px-4 py-3">Operacion</th>
+              <th className="px-4 py-3">Placa</th>
+              <th className="px-4 py-3">Fecha</th>
+              <th className="px-4 py-3">Conductor</th>
+              <th className="px-4 py-3">Transportadora</th>
+              <th className="px-4 py-3">Ingreso</th>
+              <th className="px-4 py-3">Inspeccion</th>
+              <th className="px-4 py-3">Cargue</th>
+              <th className="px-4 py-3">Salida</th>
+              <th className="px-4 py-3">Creada</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {results.length === 0 ? (
+              <tr>
+                <td className="px-4 py-8 text-center text-slate-500" colSpan={10}>
+                  {isPending ? "Cargando informacion..." : "Sin registros para mostrar."}
+                </td>
+              </tr>
+            ) : (
+              results.map((item) => {
+                const isSelected =
+                  item.nombre_operacion === selectedNombreOperacion;
+
+                return (
+                  <tr
+                    key={item.id}
+                    className={`cursor-pointer transition hover:bg-sky-50/70 ${
+                      isSelected ? "bg-sky-50" : "bg-white"
+                    }`}
+                    onClick={() => onSelect(item.nombre_operacion)}
+                  >
+                    <td className="max-w-[220px] px-4 py-4">
+                      <button
+                        type="button"
+                        className="text-left text-xs font-bold uppercase tracking-[0.12em] text-sky-700 underline-offset-4 hover:underline"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onSelect(item.nombre_operacion);
+                        }}
+                      >
+                        {item.nombre_operacion}
+                      </button>
+                    </td>
+                    <td className="px-4 py-4 font-semibold text-slate-900">
+                      {item.placa}
+                    </td>
+                    <td className="px-4 py-4 text-slate-700">{item.fecha}</td>
+                    <td className="px-4 py-4 text-slate-700">
+                      {item.conductor || "Sin dato"}
+                    </td>
+                    <td className="px-4 py-4 text-slate-700">
+                      {item.empresa_transportadora || "Sin dato"}
+                    </td>
+                    <td className="px-4 py-4">
+                      <InlineState value={item.estado_ingreso} />
+                    </td>
+                    <td className="px-4 py-4">
+                      <InlineState value={item.estado_inspeccion} />
+                    </td>
+                    <td className="px-4 py-4">
+                      <InlineState value={item.estado_cargue} />
+                    </td>
+                    <td className="px-4 py-4">
+                      <InlineState value={item.estado_salida} />
+                    </td>
+                    <td className="px-4 py-4 text-slate-600">
+                      {formatDateTime(item.created_at)}
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
 }
 
 function DetailCard({
@@ -600,6 +730,37 @@ function formatSummaryValue(value: unknown) {
 
 function formatEstado(value: string) {
   return value.replaceAll("_", " ");
+}
+
+function formatDateTime(value?: string) {
+  if (!value) {
+    return "Sin dato";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("es-CO", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function InlineState({ value }: { value: string }) {
+  const tone =
+    value === "completo"
+      ? "bg-emerald-50 text-emerald-700"
+      : value === "en_proceso"
+        ? "bg-amber-50 text-amber-700"
+        : "bg-slate-100 text-slate-600";
+
+  return (
+    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${tone}`}>
+      {formatEstado(value)}
+    </span>
+  );
 }
 
 function Field({

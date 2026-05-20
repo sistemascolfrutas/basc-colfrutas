@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 
 import { createFsu01IngresoWithClient, type EvidenciasInput, type Fsu01Input } from "@/lib/fsu01";
 import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
+import { getResponsableOptionsWithClient } from "@/lib/responsables";
 import { getAuthorizedServerClient } from "@/lib/server-auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   const rateLimit = consumeRateLimit(`api:fsu01:${getClientIp(request.headers)}`, {
@@ -50,7 +52,10 @@ export async function POST(request: Request) {
       fotoInteriorUnidadCarga: getFile(formData, "fotoInteriorUnidadCarga"),
     };
 
-    const data = await createFsu01IngresoWithClient(supabase, input, evidencias);
+    const responsableOptions = await getResponsableOptionsWithClient(createAdminClient());
+    const data = await createFsu01IngresoWithClient(supabase, input, evidencias, {
+      responsableOptions,
+    });
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json(
