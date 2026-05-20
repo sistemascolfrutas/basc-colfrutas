@@ -5,6 +5,9 @@ import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
 import { getAuthorizedServerClient } from "@/lib/server-auth";
 import { tryCreateAdminClient } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(request: Request) {
   const rateLimit = consumeRateLimit(`api:responsables:${getClientIp(request.headers)}`, {
     limit: 60,
@@ -23,10 +26,19 @@ export async function GET(request: Request) {
   }
 
   try {
-    const data = await getResponsableOptionsWithClient(
-      tryCreateAdminClient() ?? supabase,
-    );
-    return NextResponse.json(data);
+    const adminClient = tryCreateAdminClient();
+    const data = adminClient
+      ? await getResponsableOptionsWithClient(adminClient).catch(() =>
+          getResponsableOptionsWithClient(supabase),
+        )
+      : await getResponsableOptionsWithClient(supabase);
+
+    return NextResponse.json(data, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        "X-Responsables-Count": String(data.length),
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       {

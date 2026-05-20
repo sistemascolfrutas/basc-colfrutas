@@ -354,7 +354,7 @@ export function Fsu01Form() {
 }
 
 async function loadResponsableOptions() {
-  const response = await fetch("/api/responsables", {
+  const response = await fetch(`/api/responsables?form=fsu01&t=${Date.now()}`, {
     cache: "no-store",
   });
   const result = await response.json();
