@@ -59,6 +59,7 @@ type FileFieldProps = {
   onChange: (file: File | null) => void;
   optional?: boolean;
   disabled?: boolean;
+  capture?: boolean;
 };
 
 type OperationPreviewCardProps = {
@@ -292,6 +293,7 @@ export function FileField({
   onChange,
   optional = false,
   disabled = false,
+  capture = false,
 }: FileFieldProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [warning, setWarning] = useState<string | null>(null);
@@ -333,6 +335,7 @@ export function FileField({
       <input
         type="file"
         accept="image/*"
+        capture={capture ? "environment" : undefined}
         disabled={disabled || isProcessing}
         onChange={(event) => void handleFileChange(event.target.files?.[0] ?? null)}
         className="text-sm text-slate-600 file:mr-4 file:rounded-full file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white disabled:cursor-not-allowed"

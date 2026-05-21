@@ -9,7 +9,6 @@ import {
   FloatingNotice,
   InputField,
   SectionTitle,
-  SelectField,
   TextAreaField,
 } from "@/components/form-ui";
 import { PendingOperationPicker } from "@/components/pending-operation-picker";
@@ -48,7 +47,6 @@ export function Fsu03Form() {
   const [files, setFiles] = useState(initialFiles);
   const formRef = useRef(form);
   const filesRef = useRef(files);
-  const [participantOptions, setParticipantOptions] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
   const [isDraftReady, setIsDraftReady] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -56,32 +54,6 @@ export function Fsu03Form() {
   const [savedRecord, setSavedRecord] = useState<Record<string, unknown> | null>(
     null,
   );
-
-  useEffect(() => {
-    let active = true;
-
-    void (async () => {
-      try {
-        const options = await loadParticipantOptions();
-        if (active) {
-          setParticipantOptions(options);
-          setErrorMessage(null);
-        }
-      } catch (error) {
-        if (active) {
-          setErrorMessage(
-            error instanceof Error
-              ? error.message
-              : "No fue posible cargar participantes F-SU-03.",
-          );
-        }
-      }
-    })();
-
-    return () => {
-      active = false;
-    };
-  }, []);
 
   useEffect(() => {
     let active = true;
@@ -318,6 +290,7 @@ export function Fsu03Form() {
               label="Foto de POMA o remision de cargue"
               file={files.fotoPomaRemisionCargue}
               onChange={(file) => setFile("fotoPomaRemisionCargue", file)}
+              capture
             />
 
             <SectionTitle
@@ -337,7 +310,6 @@ export function Fsu03Form() {
               label="Observaciones del cargue"
               value={form.observacionesCargue}
               onChange={(value) => setField("observacionesCargue", value)}
-              required
               tone="rose"
             />
 
@@ -348,32 +320,23 @@ export function Fsu03Form() {
             />
 
             <div className="grid gap-4 md:grid-cols-3">
-              <SelectField
+              <InputField
                 label="Participante 1"
                 value={form.participante1}
                 onChange={(value) => setField("participante1", value)}
-                options={participantOptions}
-                required
-                disabled={participantOptions.length === 0}
-                tone="rose"
+                placeholder="Nombre completo"
               />
-              <SelectField
+              <InputField
                 label="Participante 2"
                 value={form.participante2}
                 onChange={(value) => setField("participante2", value)}
-                options={participantOptions}
-                required
-                disabled={participantOptions.length === 0}
-                tone="rose"
+                placeholder="Nombre completo"
               />
-              <SelectField
+              <InputField
                 label="Participante 3"
                 value={form.participante3}
                 onChange={(value) => setField("participante3", value)}
-                options={participantOptions}
-                required
-                disabled={participantOptions.length === 0}
-                tone="rose"
+                placeholder="Nombre completo"
               />
             </div>
 
@@ -388,38 +351,35 @@ export function Fsu03Form() {
                 label="Foto del cargue 25%"
                 file={files.fotoCargue25}
                 onChange={(file) => setFile("fotoCargue25", file)}
+                capture
               />
               <FileField
                 label="Foto del cargue 50%"
                 file={files.fotoCargue50}
                 onChange={(file) => setFile("fotoCargue50", file)}
+                capture
               />
               <FileField
                 label="Foto del cargue 75%"
                 file={files.fotoCargue75}
                 onChange={(file) => setFile("fotoCargue75", file)}
+                capture
               />
               <FileField
                 label="Foto del cargue 100%"
                 file={files.fotoCargue100}
                 onChange={(file) => setFile("fotoCargue100", file)}
+                capture
               />
             </div>
 
             <button
               type="submit"
-              disabled={isPending || participantOptions.length === 0}
+              disabled={isPending}
               className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:bg-slate-400"
             >
               {isPending ? "Guardando F-SU-03..." : "Guardar F-SU-03"}
             </button>
-
-            {participantOptions.length === 0 ? (
-              <p className="text-xs text-rose-600">
-                No hay participantes activos para elegir. Solicita al administrador
-                configurar el catalogo de F-SU-03.
-              </p>
-            ) : null}
           </form>
         </div>
       </main>
@@ -464,19 +424,4 @@ function hasDraftContent(form: Fsu03Input, files: EvidenciasFsu03Input) {
     Object.values(form).some((value) => value !== "" && value !== null) ||
     Object.values(files).some(Boolean)
   );
-}
-
-async function loadParticipantOptions() {
-  const response = await fetch("/api/fsu03-participants", {
-    cache: "no-store",
-  });
-  const result = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      result.error || "No fue posible cargar participantes F-SU-03.",
-    );
-  }
-
-  return result as string[];
 }

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
 import { createFsu03CargueWithClient, type EvidenciasFsu03Input, type Fsu03Input } from "@/lib/fsu03";
-import { getFsu03ParticipantOptionsWithClient } from "@/lib/fsu03-participants";
 import { syncOperacionStatusWithClient } from "@/lib/operaciones-maestra";
 import { buildNombreOperacion, normalizeOperationDate, normalizePlate } from "@/lib/operations";
 import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
@@ -48,11 +47,7 @@ export async function POST(request: Request) {
     };
 
     const adminClient = createAdminClient();
-    const participantOptions =
-      await getFsu03ParticipantOptionsWithClient(adminClient);
-    const data = await createFsu03CargueWithClient(supabase, input, evidencias, {
-      participantOptions,
-    });
+    const data = await createFsu03CargueWithClient(supabase, input, evidencias);
     await syncOperacionStatusWithClient(
       adminClient,
       buildNombreOperacion(

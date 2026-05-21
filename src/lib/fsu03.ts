@@ -6,10 +6,8 @@ import {
   validateOperationDate,
   validatePlate,
   validateRequiredBoolean,
-  validateRequiredText,
   validateUniqueSelections,
 } from "@/lib/form-validation";
-import { getFsu03ParticipantOptionsWithClient } from "@/lib/fsu03-participants";
 import {
   requireOperacionInspeccionWithClient,
   syncOperacionStatusWithClient,
@@ -79,13 +77,8 @@ export async function createFsu03CargueWithClient(
   supabase: SupabaseClient,
   input: Fsu03Input,
   evidencias: EvidenciasFsu03Input,
-  options?: { participantOptions?: string[] },
 ) {
   validateFsu03Input(input, evidencias);
-  const participantOptions =
-    options?.participantOptions ??
-    (await getFsu03ParticipantOptionsWithClient(supabase));
-  validateSelectedParticipants(input, participantOptions);
   const fechaCargue = normalizeOperationDate(input.fechaCargue);
   const placa = normalizePlate(input.placa);
 
@@ -180,13 +173,9 @@ export function validateFsu03Input(
   validateOperationDate(input.fechaCargue, "La fecha de cargue");
   validatePlate(input.placa);
   validateRequiredBoolean(input.seRealizoCargue, "Se realizo el cargue");
-  validateRequiredText(
-    input.observacionesCargue,
-    "Las observaciones del cargue",
-  );
   validateUniqueSelections(
     [input.participante1, input.participante2, input.participante3],
-    "La seleccion de participantes",
+    "Los participantes",
   );
 
   validateImageFile(
@@ -197,27 +186,4 @@ export function validateFsu03Input(
   validateImageFile(evidencias.fotoCargue50, "Foto del cargue al 50%");
   validateImageFile(evidencias.fotoCargue75, "Foto del cargue al 75%");
   validateImageFile(evidencias.fotoCargue100, "Foto del cargue al 100%");
-}
-
-function validateSelectedParticipants(
-  input: Fsu03Input,
-  options: string[],
-) {
-  if (options.length === 0) {
-    throw new Error(
-      "No hay participantes F-SU-03 activos. Solicita al administrador configurar el catalogo.",
-    );
-  }
-
-  for (const [label, value] of [
-    ["El participante 1", input.participante1],
-    ["El participante 2", input.participante2],
-    ["El participante 3", input.participante3],
-  ] as const) {
-    const selectedValue = value.trim();
-
-    if (!options.some((option) => option.trim() === selectedValue)) {
-      throw new Error(`${label} seleccionado ya no esta disponible. Vuelve a elegirlo.`);
-    }
-  }
 }

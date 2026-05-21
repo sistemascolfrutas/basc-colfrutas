@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 
 import {
-  createFsu03ParticipantWithClient,
   listFsu03ParticipantsWithClient,
-  type Fsu03ParticipantInput,
 } from "@/lib/fsu03-participants";
 import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
 import { getAuthorizedServerClient } from "@/lib/server-auth";
@@ -59,19 +57,11 @@ export async function POST(request: Request) {
     return errorResponse;
   }
 
-  try {
-    const body = (await request.json()) as Fsu03ParticipantInput;
-    const data = await createFsu03ParticipantWithClient(createAdminClient(), body);
-    return NextResponse.json(data);
-  } catch (error) {
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "No fue posible crear el participante F-SU-03.",
-      },
-      { status: 400 },
-    );
-  }
+  return NextResponse.json(
+    {
+      error:
+        "La gestion de participantes F-SU-03 esta suspendida. Escribelos manualmente en el formulario.",
+    },
+    { status: 410 },
+  );
 }

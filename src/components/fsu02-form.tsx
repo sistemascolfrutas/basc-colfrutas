@@ -479,32 +479,38 @@ export function Fsu02Form() {
                 label="Foto lateral externa de la unidad"
                 file={files.fotoLateralExternaUnidad}
                 onChange={(file) => setFile("fotoLateralExternaUnidad", file)}
+                capture
               />
               <FileField
                 label="Foto del interior vacio de la unidad de carga"
                 file={files.fotoInteriorVacioUnidadCarga}
                 onChange={(file) => setFile("fotoInteriorVacioUnidadCarga", file)}
+                capture
               />
               <FileField
                 label="Foto del piso interno"
                 file={files.fotoPisoInterno}
                 onChange={(file) => setFile("fotoPisoInterno", file)}
+                capture
               />
               <FileField
                 label="Foto del techo interno"
                 file={files.fotoTechoInterno}
                 onChange={(file) => setFile("fotoTechoInterno", file)}
+                capture
               />
               <FileField
                 label="Foto de puertas o sistema de cierre"
                 file={files.fotoPuertasSistemaCierre}
                 onChange={(file) => setFile("fotoPuertasSistemaCierre", file)}
+                capture
               />
               <FileField
                 label="Foto de hallazgo o novedad"
                 file={files.fotoHallazgoNovedad}
                 onChange={(file) => setFile("fotoHallazgoNovedad", file)}
                 optional={!form.seDetectoNovedad}
+                capture
               />
             </div>
 

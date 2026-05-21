@@ -41,12 +41,6 @@ const actions = [
     permission: "user_admin" as const,
   },
   {
-    href: "/admin/participantes-fsu03",
-    title: "Participantes F-SU-03",
-    description: "Crear, editar y eliminar las opciones de participantes del F-SU-03.",
-    permission: "user_admin" as const,
-  },
-  {
     href: "/admin/responsables",
     title: "Responsables",
     description: "Crear, editar y eliminar las opciones de responsables.",
