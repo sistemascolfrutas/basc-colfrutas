@@ -333,7 +333,6 @@ export function FileField({
       <input
         type="file"
         accept="image/*"
-        capture="environment"
         disabled={disabled || isProcessing}
         onChange={(event) => void handleFileChange(event.target.files?.[0] ?? null)}
         className="text-sm text-slate-600 file:mr-4 file:rounded-full file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white disabled:cursor-not-allowed"
@@ -347,7 +346,8 @@ export function FileField({
       </span>
       {warning ? <span className="text-xs text-emerald-700">{warning}</span> : null}
       <span className="text-xs text-slate-400">
-        Formatos: JPG, PNG, WEBP, HEIC. Maximo 8 MB.
+        Puedes tomar una foto o elegir una imagen de la galeria. Formatos: JPG,
+        PNG, WEBP, HEIC. Maximo 8 MB.
       </span>
     </label>
   );
