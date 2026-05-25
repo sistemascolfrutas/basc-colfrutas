@@ -16,10 +16,14 @@ create table if not exists public.reg_fsu04_salida (
   fecha_hora_salida text not null,
   placa_numero_contenedor text not null,
   puertas_cerradas_sellos_instalados text not null check (puertas_cerradas_sellos_instalados in ('Si', 'No', 'No aplica')),
+  observaciones text,
   foto_final_unidad_salida_url text not null,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
+
+alter table public.reg_fsu04_salida
+add column if not exists observaciones text;
 
 drop trigger if exists reg_fsu04_salida_set_updated_at on public.reg_fsu04_salida;
 create trigger reg_fsu04_salida_set_updated_at

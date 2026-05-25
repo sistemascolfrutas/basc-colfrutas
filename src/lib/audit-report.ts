@@ -698,6 +698,7 @@ function formatLabel(key: string) {
     se_autoriza_para_cargue: "Se autoriza para cargue",
     se_detecto_novedad: "Se detecto novedad",
     descripcion_novedad: "Descripcion de la novedad",
+    observaciones: "Observaciones",
     se_realizo_cargue: "Se realizo cargue",
     observaciones_cargue: "Observaciones del cargue",
     puertas_cerradas_sellos_instalados: "Puertas cerradas y sellos instalados",

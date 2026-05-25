@@ -30,6 +30,7 @@ export type Fsu04Input = {
   puertasCerradasSellosInstalados:
     | (typeof PUERTAS_SELLOS_OPTIONS)[number]
     | "";
+  observaciones: string;
 };
 
 export type EvidenciasFsu04Input = Record<EvidenciaKey, File | null>;
@@ -84,6 +85,7 @@ export async function createFsu04SalidaWithClient(
     placa_numero_contenedor: placa,
     puertas_cerradas_sellos_instalados:
       input.puertasCerradasSellosInstalados,
+    observaciones: input.observaciones.trim() || null,
     ...uploadedUrls,
   };
 

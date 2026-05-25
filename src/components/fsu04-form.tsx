@@ -9,6 +9,7 @@ import {
   InputField,
   SectionTitle,
   SelectField,
+  TextAreaField,
 } from "@/components/form-ui";
 import { PendingOperationPicker } from "@/components/pending-operation-picker";
 import {
@@ -21,6 +22,7 @@ const initialForm: Fsu04Input = {
   fechaHoraSalida: "",
   placaNumeroContenedor: "",
   puertasCerradasSellosInstalados: "",
+  observaciones: "",
 };
 
 const initialFiles: EvidenciasFsu04Input = {
@@ -158,6 +160,14 @@ export function Fsu04Form() {
             }
             options={PUERTAS_SELLOS_OPTIONS}
             required
+            tone="amber"
+          />
+
+          <TextAreaField
+            label="Observaciones"
+            value={form.observaciones}
+            onChange={(value) => setField("observaciones", value)}
+            placeholder="Registra novedades u observaciones de salida"
             tone="amber"
           />
 

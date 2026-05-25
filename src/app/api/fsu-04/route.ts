@@ -43,6 +43,7 @@ export async function POST(request: Request) {
       puertasCerradasSellosInstalados: String(
         formData.get("puertasCerradasSellosInstalados") ?? "",
       ) as Fsu04Input["puertasCerradasSellosInstalados"],
+      observaciones: String(formData.get("observaciones") ?? ""),
     };
 
     const evidencias: EvidenciasFsu04Input = {
