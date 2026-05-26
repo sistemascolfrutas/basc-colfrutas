@@ -102,9 +102,12 @@ export async function getOrCreateOperacionMaestraWithClient(
 
 export async function requireOperacionIngresoWithClient(
   supabase: SupabaseClient,
-  input: Pick<GetOrCreateOperacionInput, "placa" | "fecha">,
+  input: Pick<GetOrCreateOperacionInput, "placa" | "fecha"> & {
+    nombreOperacion?: string;
+  },
 ) {
-  const nombreOperacion = buildNombreOperacion(input.placa, input.fecha);
+  const nombreOperacion =
+    input.nombreOperacion?.trim() || buildNombreOperacion(input.placa, input.fecha);
   const operacion =
     await getOperacionMaestraByNombreOperacionWithClient(supabase, nombreOperacion);
   const ingreso = await getExistingFormRecordWithClient(
@@ -136,9 +139,12 @@ export async function requireOperacionIngresoWithClient(
 
 export async function requireOperacionInspeccionWithClient(
   supabase: SupabaseClient,
-  input: Pick<GetOrCreateOperacionInput, "placa" | "fecha">,
+  input: Pick<GetOrCreateOperacionInput, "placa" | "fecha"> & {
+    nombreOperacion?: string;
+  },
 ) {
-  const nombreOperacion = buildNombreOperacion(input.placa, input.fecha);
+  const nombreOperacion =
+    input.nombreOperacion?.trim() || buildNombreOperacion(input.placa, input.fecha);
   const operacion =
     await getOperacionMaestraByNombreOperacionWithClient(supabase, nombreOperacion);
   const inspeccion = await getExistingFormRecordWithClient(
@@ -163,9 +169,12 @@ export async function requireOperacionInspeccionWithClient(
 
 export async function requireOperacionCargueWithClient(
   supabase: SupabaseClient,
-  input: Pick<GetOrCreateOperacionInput, "placa" | "fecha">,
+  input: Pick<GetOrCreateOperacionInput, "placa" | "fecha"> & {
+    nombreOperacion?: string;
+  },
 ) {
-  const nombreOperacion = buildNombreOperacion(input.placa, input.fecha);
+  const nombreOperacion =
+    input.nombreOperacion?.trim() || buildNombreOperacion(input.placa, input.fecha);
   const operacion =
     await getOperacionMaestraByNombreOperacionWithClient(supabase, nombreOperacion);
   const cargue = await getExistingFormRecordWithClient(
@@ -191,9 +200,12 @@ export async function requireOperacionCargueWithClient(
 
 export async function requireOperacionSalidaWithClient(
   supabase: SupabaseClient,
-  input: Pick<GetOrCreateOperacionInput, "placa" | "fecha">,
+  input: Pick<GetOrCreateOperacionInput, "placa" | "fecha"> & {
+    nombreOperacion?: string;
+  },
 ) {
-  const nombreOperacion = buildNombreOperacion(input.placa, input.fecha);
+  const nombreOperacion =
+    input.nombreOperacion?.trim() || buildNombreOperacion(input.placa, input.fecha);
   const operacion =
     await getOperacionMaestraByNombreOperacionWithClient(supabase, nombreOperacion);
   const ingreso = await getExistingFormRecordWithClient(

@@ -27,6 +27,7 @@ type EvidenciaKey =
   | "fotoCargue100";
 
 export type Fsu03Input = {
+  nombreOperacion?: string;
   fechaCargue: string;
   placa: string;
   seRealizoCargue: boolean | null;
@@ -81,13 +82,15 @@ export async function createFsu03CargueWithClient(
   validateFsu03Input(input, evidencias);
   const fechaCargue = normalizeOperationDate(input.fechaCargue);
   const placa = normalizePlate(input.placa);
+  const nombreOperacion =
+    input.nombreOperacion?.trim() || buildNombreOperacion(placa, fechaCargue);
 
   const operacion = await requireOperacionInspeccionWithClient(supabase, {
     placa,
     fecha: fechaCargue,
+    nombreOperacion,
   });
 
-  const nombreOperacion = buildNombreOperacion(placa, fechaCargue);
   const evidenciasFolder =
     operacion.ruta_evidencias_folder ?? `evidencias/${nombreOperacion}`;
 

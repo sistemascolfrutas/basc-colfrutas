@@ -25,6 +25,7 @@ export const PUERTAS_SELLOS_OPTIONS = ["Si", "No", "No aplica"] as const;
 type EvidenciaKey = "fotoFinalUnidadSalida";
 
 export type Fsu04Input = {
+  nombreOperacion?: string;
   fechaHoraSalida: string;
   placaNumeroContenedor: string;
   puertasCerradasSellosInstalados:
@@ -61,14 +62,16 @@ export async function createFsu04SalidaWithClient(
   validateFsu04Input(input, evidencias);
   const fechaOperacion = getOperationDateFromDateTime(input.fechaHoraSalida);
   const placa = normalizePlate(input.placaNumeroContenedor);
+  const nombreOperacion =
+    input.nombreOperacion?.trim() || buildNombreOperacion(placa, fechaOperacion);
 
   const { operacion, requiereFlujoCompleto } =
     await requireOperacionSalidaWithClient(supabase, {
       placa,
       fecha: fechaOperacion,
+      nombreOperacion,
     });
 
-  const nombreOperacion = buildNombreOperacion(placa, fechaOperacion);
   const evidenciasFolder =
     operacion.ruta_evidencias_folder ?? `evidencias/${nombreOperacion}`;
 

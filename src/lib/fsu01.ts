@@ -10,11 +10,12 @@ import {
   validateRequiredText,
 } from "@/lib/form-validation";
 import {
-  getOrCreateOperacionMaestraWithClient,
   syncOperacionStatusWithClient,
 } from "@/lib/operaciones-maestra";
 import {
+  buildEvidenciasFolderPath,
   buildNombreOperacion,
+  buildNombreOperacionConsecutivo,
   normalizeOperationDate,
   normalizePlate,
 } from "@/lib/operations";
@@ -108,19 +109,16 @@ export async function createFsu01IngresoWithClient(
   validateSelectedResponsable(input.responsable, responsableOptions);
   const fechaRegistro = normalizeOperationDate(input.fechaRegistro);
   const placa = normalizePlate(input.placa);
-  const nombreOperacion = buildNombreOperacion(placa, fechaRegistro);
-
-  await requireNoOpenIngresoWithClient(supabase, nombreOperacion);
-
-  const operacion = await getOrCreateOperacionMaestraWithClient(supabase, {
+  const operacion = await createNextOperacionIngresoWithClient(supabase, {
     placa,
     fecha: fechaRegistro,
     conductor: input.nombreConductor,
     empresaTransportadora: input.empresaTransportadora,
   });
 
+  const nombreOperacion = operacion.nombre_operacion;
   const evidenciasFolder =
-    operacion.data.ruta_evidencias_folder ?? `evidencias/${nombreOperacion}`;
+    operacion.ruta_evidencias_folder ?? `evidencias/${nombreOperacion}`;
 
   const uploadedUrls = await uploadFsu01Evidencias(
     supabase,
@@ -165,48 +163,127 @@ export async function createFsu01IngresoWithClient(
   return data;
 }
 
-async function requireNoOpenIngresoWithClient(
+type CreateNextOperacionIngresoInput = {
+  placa: string;
+  fecha: string;
+  conductor: string;
+  empresaTransportadora: string;
+};
+
+type OperacionIngresoRecord = {
+  id: string;
+  nombre_operacion: string;
+  ruta_evidencias_folder: string | null;
+};
+
+async function createNextOperacionIngresoWithClient(
   supabase: SupabaseClient,
-  nombreOperacion: string,
+  input: CreateNextOperacionIngresoInput,
 ) {
-  const { data: ingresos, error: ingresoError } = await supabase
-    .from("reg_fsu01_ingreso")
-    .select("id")
-    .eq("nombre_operacion", nombreOperacion)
-    .limit(1)
-    .returns<Array<{ id: string }>>();
+  const baseNombreOperacion = buildNombreOperacion(input.placa, input.fecha);
+  const { data: operaciones, error: operacionesError } = await supabase
+    .from("operaciones_maestra")
+    .select("nombre_operacion")
+    .eq("placa", input.placa)
+    .eq("fecha", input.fecha)
+    .order("created_at", { ascending: false })
+    .returns<Array<{ nombre_operacion: string }>>();
 
-  if (ingresoError) {
+  if (operacionesError) {
     throw new Error(
-      `No fue posible validar el ingreso ${nombreOperacion}: ${ingresoError.message}`,
+      `No fue posible validar operaciones abiertas para ${baseNombreOperacion}: ${operacionesError.message}`,
     );
   }
 
-  if (!ingresos?.length) {
-    return;
-  }
-
-  const { data: salida, error: salidaError } = await supabase
-    .from("reg_fsu04_salida")
-    .select("id")
-    .eq("nombre_operacion", nombreOperacion)
-    .maybeSingle<{ id: string }>();
-
-  if (salidaError) {
-    throw new Error(
-      `No fue posible validar la salida ${nombreOperacion}: ${salidaError.message}`,
-    );
-  }
-
-  if (!salida) {
-    throw new Error(
-      "No se puede guardar el F-SU-01 porque este vehiculo aun tiene un proceso abierto. Primero registra la salida en F-SU-04 para poder ingresarlo nuevamente.",
-    );
-  }
-
-  throw new Error(
-    "Ya existe un F-SU-01 para esta placa y fecha. El formulario de ingreso solo permite crear registros nuevos, no actualizar registros existentes.",
+  const nombresOperacion = (operaciones ?? []).map(
+    (operacion) => operacion.nombre_operacion,
   );
+
+  if (nombresOperacion.length > 0) {
+    const { data: salidas, error: salidasError } = await supabase
+      .from("reg_fsu04_salida")
+      .select("nombre_operacion")
+      .in("nombre_operacion", nombresOperacion)
+      .returns<Array<{ nombre_operacion: string }>>();
+
+    if (salidasError) {
+      throw new Error(
+        `No fue posible validar salidas para ${baseNombreOperacion}: ${salidasError.message}`,
+      );
+    }
+
+    const nombresConSalida = new Set(
+      (salidas ?? []).map((salida) => salida.nombre_operacion),
+    );
+    const operacionAbierta = nombresOperacion.find(
+      (nombreOperacion) => !nombresConSalida.has(nombreOperacion),
+    );
+
+    if (operacionAbierta) {
+      throw new Error(
+        `No se puede guardar el F-SU-01 porque este vehiculo aun tiene un proceso abierto (${operacionAbierta}). Primero registra la salida en F-SU-04 para poder ingresarlo nuevamente.`,
+      );
+    }
+  }
+
+  const siguienteConsecutivo = getNextOperacionConsecutivo(
+    baseNombreOperacion,
+    nombresOperacion,
+  );
+  const nombreOperacion = buildNombreOperacionConsecutivo(
+    input.placa,
+    input.fecha,
+    siguienteConsecutivo,
+  );
+  const rutaEvidenciasFolder = buildEvidenciasFolderPath(nombreOperacion);
+
+  const { data, error } = await supabase
+    .from("operaciones_maestra")
+    .insert({
+      nombre_operacion: nombreOperacion,
+      placa: input.placa,
+      fecha: input.fecha,
+      conductor: input.conductor.trim() || null,
+      empresa_transportadora: input.empresaTransportadora.trim() || null,
+      ruta_evidencias_folder: rutaEvidenciasFolder,
+      estado_ingreso: "pendiente",
+      estado_inspeccion: "pendiente",
+      estado_cargue: "pendiente",
+      estado_salida: "pendiente",
+    })
+    .select("id,nombre_operacion,ruta_evidencias_folder")
+    .single<OperacionIngresoRecord>();
+
+  if (error) {
+    throw new Error(
+      `No fue posible crear la operacion ${nombreOperacion}: ${error.message}`,
+    );
+  }
+
+  return data;
+}
+
+function getNextOperacionConsecutivo(
+  baseNombreOperacion: string,
+  nombresOperacion: string[],
+) {
+  const consecutivos = nombresOperacion.map((nombreOperacion) => {
+    if (nombreOperacion === baseNombreOperacion) {
+      return 1;
+    }
+
+    const match = nombreOperacion.match(
+      new RegExp(`^${escapeRegExp(baseNombreOperacion)}_(\\d+)$`),
+    );
+
+    return match ? Number(match[1]) : 0;
+  });
+
+  return Math.max(0, ...consecutivos) + 1;
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function validateSelectedResponsable(value: string, options: string[]) {

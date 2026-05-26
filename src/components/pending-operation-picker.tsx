@@ -92,7 +92,7 @@ export function PendingOperationPicker({
                 key={operacion.nombre_operacion}
                 value={operacion.nombre_operacion}
               >
-                {operacion.placa} - {operacion.fecha} -{" "}
+                {operacion.nombre_operacion} -{" "}
                 {operacion.conductor || "Sin conductor"}
               </option>
             ))}

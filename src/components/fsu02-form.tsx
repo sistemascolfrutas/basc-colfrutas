@@ -28,6 +28,7 @@ import {
 const DRAFT_KEY = "fsu02-form-draft";
 
 const initialForm: Fsu02Input = {
+  nombreOperacion: "",
   fechaInspeccion: "",
   placa: "",
   numeroRemolqueContenedor: "",
@@ -319,6 +320,7 @@ export function Fsu02Form() {
             setForm((current) => {
               const nextForm = {
                 ...current,
+                nombreOperacion: operacion.nombre_operacion,
                 fechaInspeccion: operacion.fecha,
                 placa: operacion.placa,
               };

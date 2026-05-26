@@ -19,6 +19,7 @@ import {
 } from "@/lib/fsu04";
 
 const initialForm: Fsu04Input = {
+  nombreOperacion: "",
   fechaHoraSalida: "",
   placaNumeroContenedor: "",
   puertasCerradasSellosInstalados: "",
@@ -119,6 +120,7 @@ export function Fsu04Form() {
           onSelect={(operacion) =>
             setForm((current) => ({
               ...current,
+              nombreOperacion: operacion.nombre_operacion,
               fechaHoraSalida: `${operacion.fecha}T${getCurrentTimeForInput()}`,
               placaNumeroContenedor: operacion.placa,
             }))

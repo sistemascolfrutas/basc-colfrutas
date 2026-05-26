@@ -30,6 +30,7 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const input: Fsu02Input = {
+      nombreOperacion: String(formData.get("nombreOperacion") ?? ""),
       fechaInspeccion: String(formData.get("fechaInspeccion") ?? ""),
       placa: String(formData.get("placa") ?? ""),
       numeroRemolqueContenedor: String(formData.get("numeroRemolqueContenedor") ?? ""),
@@ -71,10 +72,11 @@ export async function POST(request: Request) {
     });
     await syncOperacionStatusWithClient(
       adminClient,
-      buildNombreOperacion(
-        normalizePlate(input.placa),
-        normalizeOperationDate(input.fechaInspeccion),
-      ),
+      input.nombreOperacion?.trim() ||
+        buildNombreOperacion(
+          normalizePlate(input.placa),
+          normalizeOperationDate(input.fechaInspeccion),
+        ),
       {
         estado_ingreso: "completo",
         estado_inspeccion: "completo",

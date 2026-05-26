@@ -38,6 +38,7 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const input: Fsu04Input = {
+      nombreOperacion: String(formData.get("nombreOperacion") ?? ""),
       fechaHoraSalida: String(formData.get("fechaHoraSalida") ?? ""),
       placaNumeroContenedor: String(formData.get("placaNumeroContenedor") ?? ""),
       puertasCerradasSellosInstalados: String(
@@ -52,14 +53,17 @@ export async function POST(request: Request) {
 
     const data = await createFsu04SalidaWithClient(supabase, input, evidencias);
     const adminClient = createAdminClient();
-    const nombreOperacion = buildNombreOperacion(
-      normalizePlate(input.placaNumeroContenedor),
-      getOperationDateFromDateTime(input.fechaHoraSalida),
-    );
+    const nombreOperacion =
+      input.nombreOperacion?.trim() ||
+      buildNombreOperacion(
+        normalizePlate(input.placaNumeroContenedor),
+        getOperationDateFromDateTime(input.fechaHoraSalida),
+      );
     const { requiereFlujoCompleto } =
       await requireOperacionSalidaWithClient(adminClient, {
         placa: normalizePlate(input.placaNumeroContenedor),
         fecha: getOperationDateFromDateTime(input.fechaHoraSalida),
+        nombreOperacion,
       });
     await syncOperacionStatusWithClient(
       adminClient,

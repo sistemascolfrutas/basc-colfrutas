@@ -6,7 +6,6 @@ import {
   type Fsu01Input,
 } from "@/lib/fsu01";
 import { syncOperacionStatusWithClient } from "@/lib/operaciones-maestra";
-import { buildNombreOperacion, normalizeOperationDate, normalizePlate } from "@/lib/operations";
 import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
 import { getResponsableOptionsWithClient } from "@/lib/responsables";
 import { getAuthorizedServerClient } from "@/lib/server-auth";
@@ -66,10 +65,7 @@ export async function POST(request: Request) {
     });
     await syncOperacionStatusWithClient(
       adminClient,
-      buildNombreOperacion(
-        normalizePlate(input.placa),
-        normalizeOperationDate(input.fechaRegistro),
-      ),
+      String(data.nombre_operacion),
       {
         estado_ingreso: "completo",
         conductor: input.nombreConductor.trim(),

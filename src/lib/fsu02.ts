@@ -37,6 +37,7 @@ type EvidenciaKey =
   | "fotoHallazgoNovedad";
 
 export type Fsu02Input = {
+  nombreOperacion?: string;
   fechaInspeccion: string;
   placa: string;
   numeroRemolqueContenedor: string;
@@ -115,13 +116,15 @@ export async function createFsu02InspeccionWithClient(
   validateSelectedResponsable(input.responsableInspeccion, responsableOptions);
   const fechaInspeccion = normalizeOperationDate(input.fechaInspeccion);
   const placa = normalizePlate(input.placa);
+  const nombreOperacion =
+    input.nombreOperacion?.trim() || buildNombreOperacion(placa, fechaInspeccion);
 
   const operacion = await requireOperacionIngresoWithClient(supabase, {
     placa,
     fecha: fechaInspeccion,
+    nombreOperacion,
   });
 
-  const nombreOperacion = buildNombreOperacion(placa, fechaInspeccion);
   const evidenciasFolder =
     operacion.ruta_evidencias_folder ?? `evidencias/${nombreOperacion}`;
 

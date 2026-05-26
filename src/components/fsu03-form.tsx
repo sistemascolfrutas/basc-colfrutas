@@ -25,6 +25,7 @@ import {
 const DRAFT_KEY = "fsu03-form-draft";
 
 const initialForm: Fsu03Input = {
+  nombreOperacion: "",
   fechaCargue: "",
   placa: "",
   seRealizoCargue: null,
@@ -242,6 +243,7 @@ export function Fsu03Form() {
             setForm((current) => {
               const nextForm = {
                 ...current,
+                nombreOperacion: operacion.nombre_operacion,
                 fechaCargue: operacion.fecha,
                 placa: operacion.placa,
               };

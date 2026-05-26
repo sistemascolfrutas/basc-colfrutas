@@ -22,6 +22,14 @@ export function buildNombreOperacion(placa: string, fecha: string) {
   return `${placaLimpia}_${fechaLimpia}`;
 }
 
+export function buildNombreOperacionConsecutivo(
+  placa: string,
+  fecha: string,
+  consecutivo: number,
+) {
+  return `${buildNombreOperacion(placa, fecha)}_${String(consecutivo).padStart(2, "0")}`;
+}
+
 export function buildEvidenciasFolderPath(nombreOperacion: string) {
   return `evidencias/${nombreOperacion}`;
 }
