@@ -56,3 +56,21 @@ export async function saveSingleFormRecordWithClient(
 
   return data;
 }
+
+export async function createSingleFormRecordWithClient(
+  supabase: SupabaseClient,
+  table: string,
+  payload: Record<string, unknown>,
+) {
+  const { data, error } = await supabase
+    .from(table)
+    .insert(payload)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw new Error(`No fue posible guardar ${table}: ${error.message}`);
+  }
+
+  return data;
+}

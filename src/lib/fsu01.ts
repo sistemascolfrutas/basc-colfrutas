@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { saveSingleFormRecordWithClient } from "@/lib/form-records";
+import { createSingleFormRecordWithClient } from "@/lib/form-records";
 import {
   validateImageFile,
   validateOneOf,
@@ -108,6 +108,9 @@ export async function createFsu01IngresoWithClient(
   validateSelectedResponsable(input.responsable, responsableOptions);
   const fechaRegistro = normalizeOperationDate(input.fechaRegistro);
   const placa = normalizePlate(input.placa);
+  const nombreOperacion = buildNombreOperacion(placa, fechaRegistro);
+
+  await requireNoOpenIngresoWithClient(supabase, nombreOperacion);
 
   const operacion = await getOrCreateOperacionMaestraWithClient(supabase, {
     placa,
@@ -116,7 +119,6 @@ export async function createFsu01IngresoWithClient(
     empresaTransportadora: input.empresaTransportadora,
   });
 
-  const nombreOperacion = buildNombreOperacion(placa, fechaRegistro);
   const evidenciasFolder =
     operacion.data.ruta_evidencias_folder ?? `evidencias/${nombreOperacion}`;
 
@@ -149,7 +151,7 @@ export async function createFsu01IngresoWithClient(
     ...uploadedUrls,
   };
 
-  const data = await saveSingleFormRecordWithClient(
+  const data = await createSingleFormRecordWithClient(
     supabase,
     "reg_fsu01_ingreso",
     payload,
@@ -161,6 +163,50 @@ export async function createFsu01IngresoWithClient(
   });
 
   return data;
+}
+
+async function requireNoOpenIngresoWithClient(
+  supabase: SupabaseClient,
+  nombreOperacion: string,
+) {
+  const { data: ingresos, error: ingresoError } = await supabase
+    .from("reg_fsu01_ingreso")
+    .select("id")
+    .eq("nombre_operacion", nombreOperacion)
+    .limit(1)
+    .returns<Array<{ id: string }>>();
+
+  if (ingresoError) {
+    throw new Error(
+      `No fue posible validar el ingreso ${nombreOperacion}: ${ingresoError.message}`,
+    );
+  }
+
+  if (!ingresos?.length) {
+    return;
+  }
+
+  const { data: salida, error: salidaError } = await supabase
+    .from("reg_fsu04_salida")
+    .select("id")
+    .eq("nombre_operacion", nombreOperacion)
+    .maybeSingle<{ id: string }>();
+
+  if (salidaError) {
+    throw new Error(
+      `No fue posible validar la salida ${nombreOperacion}: ${salidaError.message}`,
+    );
+  }
+
+  if (!salida) {
+    throw new Error(
+      "No se puede guardar el F-SU-01 porque este vehiculo aun tiene un proceso abierto. Primero registra la salida en F-SU-04 para poder ingresarlo nuevamente.",
+    );
+  }
+
+  throw new Error(
+    "Ya existe un F-SU-01 para esta placa y fecha. El formulario de ingreso solo permite crear registros nuevos, no actualizar registros existentes.",
+  );
 }
 
 function validateSelectedResponsable(value: string, options: string[]) {
