@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import {
   FileField,
@@ -13,10 +13,17 @@ import {
 } from "@/components/form-ui";
 import { PendingOperationPicker } from "@/components/pending-operation-picker";
 import {
+  clearBrowserDraft,
+  loadBrowserDraft,
+  saveBrowserDraft,
+} from "@/lib/browser-drafts";
+import {
   type EvidenciasFsu04Input,
   type Fsu04Input,
   PUERTAS_SELLOS_OPTIONS,
 } from "@/lib/fsu04";
+
+const DRAFT_KEY = "fsu04-form-draft";
 
 const initialForm: Fsu04Input = {
   nombreOperacion: "",
@@ -33,25 +40,131 @@ const initialFiles: EvidenciasFsu04Input = {
 export function Fsu04Form() {
   const [form, setForm] = useState<Fsu04Input>(initialForm);
   const [files, setFiles] = useState(initialFiles);
+  const formRef = useRef(form);
+  const filesRef = useRef(files);
   const [isPending, startTransition] = useTransition();
+  const [isDraftReady, setIsDraftReady] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savedRecord, setSavedRecord] = useState<Record<string, unknown> | null>(
     null,
   );
 
+  useEffect(() => {
+    let active = true;
+
+    void (async () => {
+      try {
+        const draft = await loadBrowserDraft<Fsu04Input, EvidenciasFsu04Input>(
+          DRAFT_KEY,
+        );
+
+        if (active && draft) {
+          const draftForm = { ...initialForm, ...draft.form };
+          const draftFiles = { ...initialFiles, ...draft.files };
+
+          formRef.current = draftForm;
+          filesRef.current = draftFiles;
+          setForm(draftForm);
+          setFiles(draftFiles);
+          setMessage("Se recupero un borrador local de F-SU-04.");
+          window.setTimeout(() => {
+            setMessage((current) =>
+              current === "Se recupero un borrador local de F-SU-04."
+                ? null
+                : current,
+            );
+          }, 3500);
+        }
+      } catch {
+        if (active) {
+          setErrorMessage("No fue posible recuperar el borrador local de F-SU-04.");
+        }
+      } finally {
+        if (active) {
+          setIsDraftReady(true);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isDraftReady) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      if (!hasDraftContent(form, files)) {
+        void clearBrowserDraft(DRAFT_KEY);
+        return;
+      }
+
+      void saveBrowserDraft(DRAFT_KEY, {
+        form,
+        files,
+        updatedAt: new Date().toISOString(),
+      }).catch(() => {
+        setErrorMessage(
+          "No fue posible guardar temporalmente el borrador en este navegador.",
+        );
+      });
+    }, 400);
+
+    return () => window.clearTimeout(timeout);
+  }, [files, form, isDraftReady]);
+
   function setField(name: keyof Fsu04Input, value: string) {
-    setForm((current) => ({
-      ...current,
-      [name]: value,
-    }));
+    setForm((current) => {
+      const nextForm = {
+        ...current,
+        [name]: value,
+      };
+
+      formRef.current = nextForm;
+      return nextForm;
+    });
   }
 
   function setFile(name: keyof EvidenciasFsu04Input, file: File | null) {
-    setFiles((current) => ({
-      ...current,
+    const nextFiles = {
+      ...filesRef.current,
       [name]: file,
-    }));
+    };
+
+    filesRef.current = nextFiles;
+    setFiles(nextFiles);
+
+    void persistDraftNow(formRef.current, nextFiles);
+  }
+
+  async function persistDraftNow(
+    nextForm: Fsu04Input,
+    nextFiles: EvidenciasFsu04Input,
+  ) {
+    if (!isDraftReady) {
+      return;
+    }
+
+    try {
+      if (!hasDraftContent(nextForm, nextFiles)) {
+        await clearBrowserDraft(DRAFT_KEY);
+        return;
+      }
+
+      await saveBrowserDraft(DRAFT_KEY, {
+        form: nextForm,
+        files: nextFiles,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch {
+      setErrorMessage(
+        "No fue posible guardar temporalmente la foto en este navegador.",
+      );
+    }
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -69,6 +182,9 @@ export function Fsu04Form() {
         );
         setForm(initialForm);
         setFiles(initialFiles);
+        formRef.current = initialForm;
+        filesRef.current = initialFiles;
+        await clearBrowserDraft(DRAFT_KEY);
       } catch (error) {
         setErrorMessage(
           error instanceof Error
@@ -118,12 +234,17 @@ export function Fsu04Form() {
           form="fsu04"
           label="Seleccionar placa pendiente de salida"
           onSelect={(operacion) =>
-            setForm((current) => ({
-              ...current,
-              nombreOperacion: operacion.nombre_operacion,
-              fechaHoraSalida: `${operacion.fecha}T${getCurrentTimeForInput()}`,
-              placaNumeroContenedor: operacion.placa,
-            }))
+            setForm((current) => {
+              const nextForm = {
+                ...current,
+                nombreOperacion: operacion.nombre_operacion,
+                fechaHoraSalida: `${operacion.fecha}T${getCurrentTimeForInput()}`,
+                placaNumeroContenedor: operacion.placa,
+              };
+
+              formRef.current = nextForm;
+              return nextForm;
+            })
           }
         />
 
@@ -183,6 +304,7 @@ export function Fsu04Form() {
             label="Foto final de la unidad al momento de la salida"
             file={files.fotoFinalUnidadSalida}
             onChange={(file) => setFile("fotoFinalUnidadSalida", file)}
+            sourceOptions
           />
 
           <button
@@ -236,4 +358,11 @@ async function submitFsu04(form: Fsu04Input, files: EvidenciasFsu04Input) {
   }
 
   return result as Record<string, unknown>;
+}
+
+function hasDraftContent(form: Fsu04Input, files: EvidenciasFsu04Input) {
+  return (
+    Object.values(form).some((value) => value !== "" && value !== null) ||
+    Object.values(files).some(Boolean)
+  );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import {
   BooleanField,
@@ -13,11 +13,18 @@ import {
   TextAreaField,
 } from "@/components/form-ui";
 import {
+  clearBrowserDraft,
+  loadBrowserDraft,
+  saveBrowserDraft,
+} from "@/lib/browser-drafts";
+import {
   type EvidenciasInput,
   type Fsu01Input,
   TIPO_OPERACION_OPTIONS,
   TIPO_VEHICULO_OPTIONS,
 } from "@/lib/fsu01";
+
+const DRAFT_KEY = "fsu01-form-draft";
 
 const initialForm: Fsu01Input = {
   fechaRegistro: "",
@@ -48,8 +55,11 @@ const initialFiles: EvidenciasInput = {
 export function Fsu01Form() {
   const [form, setForm] = useState<Fsu01Input>(initialForm);
   const [files, setFiles] = useState(initialFiles);
+  const formRef = useRef(form);
+  const filesRef = useRef(files);
   const [responsableOptions, setResponsableOptions] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
+  const [isDraftReady, setIsDraftReady] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savedRecord, setSavedRecord] = useState<Record<string, unknown> | null>(
@@ -82,18 +92,121 @@ export function Fsu01Form() {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+
+    void (async () => {
+      try {
+        const draft = await loadBrowserDraft<Fsu01Input, EvidenciasInput>(
+          DRAFT_KEY,
+        );
+
+        if (active && draft) {
+          const draftForm = { ...initialForm, ...draft.form };
+          const draftFiles = { ...initialFiles, ...draft.files };
+
+          formRef.current = draftForm;
+          filesRef.current = draftFiles;
+          setForm(draftForm);
+          setFiles(draftFiles);
+          setMessage("Se recupero un borrador local de F-SU-01.");
+          window.setTimeout(() => {
+            setMessage((current) =>
+              current === "Se recupero un borrador local de F-SU-01."
+                ? null
+                : current,
+            );
+          }, 3500);
+        }
+      } catch {
+        if (active) {
+          setErrorMessage("No fue posible recuperar el borrador local de F-SU-01.");
+        }
+      } finally {
+        if (active) {
+          setIsDraftReady(true);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isDraftReady) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      if (!hasDraftContent(form, files)) {
+        void clearBrowserDraft(DRAFT_KEY);
+        return;
+      }
+
+      void saveBrowserDraft(DRAFT_KEY, {
+        form,
+        files,
+        updatedAt: new Date().toISOString(),
+      }).catch(() => {
+        setErrorMessage(
+          "No fue posible guardar temporalmente el borrador en este navegador.",
+        );
+      });
+    }, 400);
+
+    return () => window.clearTimeout(timeout);
+  }, [files, form, isDraftReady]);
+
   function setField(name: keyof Fsu01Input, value: string | boolean | null) {
-    setForm((current) => ({
-      ...current,
-      [name]: value,
-    }));
+    setForm((current) => {
+      const nextForm = {
+        ...current,
+        [name]: value,
+      };
+
+      formRef.current = nextForm;
+      return nextForm;
+    });
   }
 
   function setFile(name: keyof EvidenciasInput, file: File | null) {
-    setFiles((current) => ({
-      ...current,
+    const nextFiles = {
+      ...filesRef.current,
       [name]: file,
-    }));
+    };
+
+    filesRef.current = nextFiles;
+    setFiles(nextFiles);
+
+    void persistDraftNow(formRef.current, nextFiles);
+  }
+
+  async function persistDraftNow(
+    nextForm: Fsu01Input,
+    nextFiles: EvidenciasInput,
+  ) {
+    if (!isDraftReady) {
+      return;
+    }
+
+    try {
+      if (!hasDraftContent(nextForm, nextFiles)) {
+        await clearBrowserDraft(DRAFT_KEY);
+        return;
+      }
+
+      await saveBrowserDraft(DRAFT_KEY, {
+        form: nextForm,
+        files: nextFiles,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch {
+      setErrorMessage(
+        "No fue posible guardar temporalmente la foto en este navegador.",
+      );
+    }
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -111,6 +224,9 @@ export function Fsu01Form() {
         );
         setForm(initialForm);
         setFiles(initialFiles);
+        formRef.current = initialForm;
+        filesRef.current = initialFiles;
+        await clearBrowserDraft(DRAFT_KEY);
       } catch (error) {
         setErrorMessage(
           error instanceof Error
@@ -307,21 +423,25 @@ export function Fsu01Form() {
                 label="Foto frontal del vehiculo"
                 file={files.fotoFrontalVehiculo}
                 onChange={(file) => setFile("fotoFrontalVehiculo", file)}
+                sourceOptions
               />
               <FileField
                 label="Foto de la placa"
                 file={files.fotoPlaca}
                 onChange={(file) => setFile("fotoPlaca", file)}
+                sourceOptions
               />
               <FileField
                 label="Foto de la parte trasera o puertas"
                 file={files.fotoParteTraseraPuertas}
                 onChange={(file) => setFile("fotoParteTraseraPuertas", file)}
+                sourceOptions
               />
               <FileField
                 label="Foto del interior de la unidad de carga"
                 file={files.fotoInteriorUnidadCarga}
                 onChange={(file) => setFile("fotoInteriorUnidadCarga", file)}
+                sourceOptions
               />
             </div>
 
@@ -402,4 +522,11 @@ async function submitFsu01(form: Fsu01Input, files: EvidenciasInput) {
   }
 
   return result as Record<string, unknown>;
+}
+
+function hasDraftContent(form: Fsu01Input, files: EvidenciasInput) {
+  return (
+    Object.values(form).some((value) => value !== "" && value !== null) ||
+    Object.values(files).some(Boolean)
+  );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { compressImageFile } from "@/lib/client-images";
 
@@ -60,6 +60,7 @@ type FileFieldProps = {
   optional?: boolean;
   disabled?: boolean;
   capture?: boolean;
+  sourceOptions?: boolean;
 };
 
 type OperationPreviewCardProps = {
@@ -294,7 +295,10 @@ export function FileField({
   optional = false,
   disabled = false,
   capture = false,
+  sourceOptions = false,
 }: FileFieldProps) {
+  const cameraInputId = useId();
+  const galleryInputId = useId();
   const [isProcessing, setIsProcessing] = useState(false);
   const [warning, setWarning] = useState<string | null>(null);
 
@@ -327,19 +331,68 @@ export function FileField({
   }
 
   return (
-    <label className="min-w-0 flex flex-col gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm font-medium text-slate-700">
+    <div className="min-w-0 flex flex-col gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-sm font-medium text-slate-700">
       <span>
         {label}
         {optional ? " (opcional)" : ""}
       </span>
-      <input
-        type="file"
-        accept="image/*"
-        capture={capture ? "environment" : undefined}
-        disabled={disabled || isProcessing}
-        onChange={(event) => void handleFileChange(event.target.files?.[0] ?? null)}
-        className="text-sm text-slate-600 file:mr-4 file:rounded-full file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white disabled:cursor-not-allowed"
-      />
+      {sourceOptions ? (
+        <div className="grid gap-2 sm:grid-cols-2">
+          <label
+            htmlFor={cameraInputId}
+            className={[
+              "inline-flex cursor-pointer items-center justify-center rounded-2xl border border-slate-950 bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800",
+              disabled || isProcessing ? "pointer-events-none opacity-60" : "",
+            ].join(" ")}
+          >
+            Camara
+          </label>
+          <input
+            id={cameraInputId}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            disabled={disabled || isProcessing}
+            onChange={(event) => {
+              void handleFileChange(event.target.files?.[0] ?? null);
+              event.target.value = "";
+            }}
+            className="sr-only"
+          />
+
+          <label
+            htmlFor={galleryInputId}
+            className={[
+              "inline-flex cursor-pointer items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100",
+              disabled || isProcessing ? "pointer-events-none opacity-60" : "",
+            ].join(" ")}
+          >
+            Seleccionar imagenes
+          </label>
+          <input
+            id={galleryInputId}
+            type="file"
+            accept="image/*"
+            disabled={disabled || isProcessing}
+            onChange={(event) => {
+              void handleFileChange(event.target.files?.[0] ?? null);
+              event.target.value = "";
+            }}
+            className="sr-only"
+          />
+        </div>
+      ) : (
+        <input
+          type="file"
+          accept="image/*"
+          capture={capture ? "environment" : undefined}
+          disabled={disabled || isProcessing}
+          onChange={(event) =>
+            void handleFileChange(event.target.files?.[0] ?? null)
+          }
+          className="text-sm text-slate-600 file:mr-4 file:rounded-full file:border-0 file:bg-slate-950 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white disabled:cursor-not-allowed"
+        />
+      )}
       <span className="text-xs text-slate-500">
         {isProcessing
           ? "Optimizando imagen..."
@@ -352,7 +405,7 @@ export function FileField({
         Puedes tomar una foto o elegir una imagen de la galeria. Formatos: JPG,
         PNG, WEBP, HEIC. Maximo 8 MB.
       </span>
-    </label>
+    </div>
   );
 }
 
