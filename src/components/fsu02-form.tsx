@@ -63,6 +63,13 @@ const initialForm: Fsu02Input = {
   rompevientosDeflectoresTecho: null,
   soportesMetalicosCarroceriaFurgon: null,
   quintaRueda: null,
+  pataMecanicaTrailer: null,
+  areasQuintaRueda: null,
+  ladoDerechoTrailer: null,
+  ladoIzquierdoTrailer: null,
+  llantasParachoquesLucesTrailer: null,
+  placaPatinTrailer: null,
+  puntosAnclajeTrailerContenedor: null,
   resultadoFinalInspeccion: "",
   seAutorizaParaCargue: null,
   seDetectoNovedad: null,
@@ -126,6 +133,16 @@ const cabinaFields: Array<{ key: keyof Fsu02Input; label: string }> = [
   { key: "rompevientosDeflectoresTecho", label: "Rompevientos, deflectores y techo" },
   { key: "soportesMetalicosCarroceriaFurgon", label: "Estado de los soportes metálicos de la carrocería o furgón" },
   { key: "quintaRueda", label: "Quinta rueda" },
+];
+
+const remolqueFields: Array<{ key: keyof Fsu02Input; label: string }> = [
+  { key: "pataMecanicaTrailer", label: "Pata mecánica" },
+  { key: "areasQuintaRueda", label: "Áreas de quinta rueda" },
+  { key: "ladoDerechoTrailer", label: "Lado derecho" },
+  { key: "ladoIzquierdoTrailer", label: "Lado izquierdo" },
+  { key: "llantasParachoquesLucesTrailer", label: "Llantas, parachoques y luces" },
+  { key: "placaPatinTrailer", label: "Placa del patín (estructura de fijación del pin que ingresa en la quinta rueda)" },
+  { key: "puntosAnclajeTrailerContenedor", label: "Puntos de anclaje (4 pines) o seguro del tráiler al contenedor (twist lock)" },
 ];
 
 export function Fsu02Form() {
@@ -448,6 +465,24 @@ export function Fsu02Form() {
 
             <div className="grid gap-4 md:grid-cols-2">
               {cabinaFields.map((field) => (
+                <BooleanField
+                  key={field.key}
+                  label={field.label}
+                  value={form[field.key] as boolean | null}
+                  onChange={(value) => setField(field.key, value)}
+                  tone="amber"
+                />
+              ))}
+            </div>
+
+            <SectionTitle
+              eyebrow="Remolque"
+              title="Remolque (tráiler)"
+              tone="amber"
+            />
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {remolqueFields.map((field) => (
                 <BooleanField
                   key={field.key}
                   label={field.label}

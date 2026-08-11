@@ -72,6 +72,13 @@ export type Fsu02Input = {
   rompevientosDeflectoresTecho: boolean | null;
   soportesMetalicosCarroceriaFurgon: boolean | null;
   quintaRueda: boolean | null;
+  pataMecanicaTrailer: boolean | null;
+  areasQuintaRueda: boolean | null;
+  ladoDerechoTrailer: boolean | null;
+  ladoIzquierdoTrailer: boolean | null;
+  llantasParachoquesLucesTrailer: boolean | null;
+  placaPatinTrailer: boolean | null;
+  puntosAnclajeTrailerContenedor: boolean | null;
   resultadoFinalInspeccion: (typeof RESULTADO_INSPECCION_OPTIONS)[number] | "";
   seAutorizaParaCargue: boolean | null;
   seDetectoNovedad: boolean | null;
@@ -194,6 +201,13 @@ export async function createFsu02InspeccionWithClient(
     soportes_metalicos_carroceria_furgon:
       input.soportesMetalicosCarroceriaFurgon,
     quinta_rueda: input.quintaRueda,
+    pata_mecanica_trailer: input.pataMecanicaTrailer,
+    areas_quinta_rueda: input.areasQuintaRueda,
+    lado_derecho_trailer: input.ladoDerechoTrailer,
+    lado_izquierdo_trailer: input.ladoIzquierdoTrailer,
+    llantas_parachoques_luces_trailer: input.llantasParachoquesLucesTrailer,
+    placa_patin_trailer: input.placaPatinTrailer,
+    puntos_anclaje_trailer_contenedor: input.puntosAnclajeTrailerContenedor,
     resultado_final_inspeccion: input.resultadoFinalInspeccion,
     se_autoriza_para_cargue: input.seAutorizaParaCargue,
     se_detecto_novedad: input.seDetectoNovedad,
@@ -321,6 +335,13 @@ export function validateFsu02Input(
     ["Rompevientos, deflectores y techo", input.rompevientosDeflectoresTecho],
     ["Soportes metalicos de carroceria o furgon", input.soportesMetalicosCarroceriaFurgon],
     ["Quinta rueda", input.quintaRueda],
+    ["Pata mecanica", input.pataMecanicaTrailer],
+    ["Areas de quinta rueda", input.areasQuintaRueda],
+    ["Lado derecho del trailer", input.ladoDerechoTrailer],
+    ["Lado izquierdo del trailer", input.ladoIzquierdoTrailer],
+    ["Llantas, parachoques y luces del trailer", input.llantasParachoquesLucesTrailer],
+    ["Placa del patin del trailer", input.placaPatinTrailer],
+    ["Puntos de anclaje o seguro del trailer al contenedor", input.puntosAnclajeTrailerContenedor],
   ] as const) {
     validateRequiredBoolean(value, label);
   }
