@@ -47,6 +47,22 @@ const initialForm: Fsu02Input = {
   ausenciaHumedadDerrame: "",
   ausenciaContaminacionVisible: "",
   condicionAptaParaProductoATransportar: "",
+  ordenAseoCabina: null,
+  puertasAjustadasCabina: null,
+  techoCabinaBuenEstado: null,
+  pisoInteriorRemolqueLimpio: null,
+  estadoPuertasFurgon: null,
+  estadoBastidores: null,
+  defensaTrasera: null,
+  parachoquesNeumaticosRines: null,
+  puertasCompartimientosHerramientas: null,
+  cajaBateria: null,
+  cajaFiltroAire: null,
+  tanqueCombustible: null,
+  compartimientoInteriorCabinaDormitorio: null,
+  rompevientosDeflectoresTecho: null,
+  soportesMetalicosCarroceriaFurgon: null,
+  quintaRueda: null,
   resultadoFinalInspeccion: "",
   seAutorizaParaCargue: null,
   seDetectoNovedad: null,
@@ -91,6 +107,25 @@ const checkFields: Array<{ key: keyof Fsu02Input; label: string }> = [
     key: "condicionAptaParaProductoATransportar",
     label: "Condicion apta para el producto a transportar",
   },
+];
+
+const cabinaFields: Array<{ key: keyof Fsu02Input; label: string }> = [
+  { key: "ordenAseoCabina", label: "Orden y aseo dentro de la cabina" },
+  { key: "puertasAjustadasCabina", label: "Puertas ajustadas" },
+  { key: "techoCabinaBuenEstado", label: "Techo de cabina en buen estado" },
+  { key: "pisoInteriorRemolqueLimpio", label: "Estado del piso e interior del remolque: limpio, sin manchas, libre de olores, sin humedad y sin residuos de transporte de alimentos" },
+  { key: "estadoPuertasFurgon", label: "Estado de puertas del furgón (no aplica para planchones y portacontenedores)" },
+  { key: "estadoBastidores", label: "Estado de bastidores (patas del tráiler o apoyos laterales): sin dobleces, roturas y completos" },
+  { key: "defensaTrasera", label: "Defensa trasera" },
+  { key: "parachoquesNeumaticosRines", label: "Parachoques, neumáticos y rines" },
+  { key: "puertasCompartimientosHerramientas", label: "Puertas y compartimientos de herramientas" },
+  { key: "cajaBateria", label: "Caja de batería" },
+  { key: "cajaFiltroAire", label: "Caja y filtro de aire" },
+  { key: "tanqueCombustible", label: "Tanque de combustible" },
+  { key: "compartimientoInteriorCabinaDormitorio", label: "Compartimiento interior de la cabina y dormitorio" },
+  { key: "rompevientosDeflectoresTecho", label: "Rompevientos, deflectores y techo" },
+  { key: "soportesMetalicosCarroceriaFurgon", label: "Estado de los soportes metálicos de la carrocería o furgón" },
+  { key: "quintaRueda", label: "Quinta rueda" },
 ];
 
 export function Fsu02Form() {
@@ -400,6 +435,24 @@ export function Fsu02Form() {
                   onChange={(value) => setField(field.key, value)}
                   options={CHECK_OPTIONS}
                   required
+                  tone="amber"
+                />
+              ))}
+            </div>
+
+            <SectionTitle
+              eyebrow="Cabina"
+              title="Cabina vehículo cabezote"
+              tone="amber"
+            />
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {cabinaFields.map((field) => (
+                <BooleanField
+                  key={field.key}
+                  label={field.label}
+                  value={form[field.key] as boolean | null}
+                  onChange={(value) => setField(field.key, value)}
                   tone="amber"
                 />
               ))}

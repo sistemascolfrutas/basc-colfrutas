@@ -56,6 +56,22 @@ export type Fsu02Input = {
   ausenciaHumedadDerrame: (typeof CHECK_OPTIONS)[number] | "";
   ausenciaContaminacionVisible: (typeof CHECK_OPTIONS)[number] | "";
   condicionAptaParaProductoATransportar: (typeof CHECK_OPTIONS)[number] | "";
+  ordenAseoCabina: boolean | null;
+  puertasAjustadasCabina: boolean | null;
+  techoCabinaBuenEstado: boolean | null;
+  pisoInteriorRemolqueLimpio: boolean | null;
+  estadoPuertasFurgon: boolean | null;
+  estadoBastidores: boolean | null;
+  defensaTrasera: boolean | null;
+  parachoquesNeumaticosRines: boolean | null;
+  puertasCompartimientosHerramientas: boolean | null;
+  cajaBateria: boolean | null;
+  cajaFiltroAire: boolean | null;
+  tanqueCombustible: boolean | null;
+  compartimientoInteriorCabinaDormitorio: boolean | null;
+  rompevientosDeflectoresTecho: boolean | null;
+  soportesMetalicosCarroceriaFurgon: boolean | null;
+  quintaRueda: boolean | null;
   resultadoFinalInspeccion: (typeof RESULTADO_INSPECCION_OPTIONS)[number] | "";
   seAutorizaParaCargue: boolean | null;
   seDetectoNovedad: boolean | null;
@@ -159,6 +175,25 @@ export async function createFsu02InspeccionWithClient(
     ausencia_contaminacion_visible: input.ausenciaContaminacionVisible,
     condicion_apta_para_producto_a_transportar:
       input.condicionAptaParaProductoATransportar,
+    orden_aseo_cabina: input.ordenAseoCabina,
+    puertas_ajustadas_cabina: input.puertasAjustadasCabina,
+    techo_cabina_buen_estado: input.techoCabinaBuenEstado,
+    piso_interior_remolque_limpio: input.pisoInteriorRemolqueLimpio,
+    estado_puertas_furgon: input.estadoPuertasFurgon,
+    estado_bastidores: input.estadoBastidores,
+    defensa_trasera: input.defensaTrasera,
+    parachoques_neumaticos_rines: input.parachoquesNeumaticosRines,
+    puertas_compartimientos_herramientas:
+      input.puertasCompartimientosHerramientas,
+    caja_bateria: input.cajaBateria,
+    caja_filtro_aire: input.cajaFiltroAire,
+    tanque_combustible: input.tanqueCombustible,
+    compartimiento_interior_cabina_dormitorio:
+      input.compartimientoInteriorCabinaDormitorio,
+    rompevientos_deflectores_techo: input.rompevientosDeflectoresTecho,
+    soportes_metalicos_carroceria_furgon:
+      input.soportesMetalicosCarroceriaFurgon,
+    quinta_rueda: input.quintaRueda,
     resultado_final_inspeccion: input.resultadoFinalInspeccion,
     se_autoriza_para_cargue: input.seAutorizaParaCargue,
     se_detecto_novedad: input.seDetectoNovedad,
@@ -268,6 +303,27 @@ export function validateFsu02Input(
     "Se autoriza para cargue",
   );
   validateRequiredBoolean(input.seDetectoNovedad, "Se detecto novedad");
+
+  for (const [label, value] of [
+    ["Orden y aseo dentro de la cabina", input.ordenAseoCabina],
+    ["Puertas ajustadas", input.puertasAjustadasCabina],
+    ["Techo de cabina en buen estado", input.techoCabinaBuenEstado],
+    ["Estado del piso e interior del remolque", input.pisoInteriorRemolqueLimpio],
+    ["Estado de puertas del furgon", input.estadoPuertasFurgon],
+    ["Estado de bastidores", input.estadoBastidores],
+    ["Defensa trasera", input.defensaTrasera],
+    ["Parachoques, neumaticos y rines", input.parachoquesNeumaticosRines],
+    ["Puertas y compartimientos de herramientas", input.puertasCompartimientosHerramientas],
+    ["Caja de bateria", input.cajaBateria],
+    ["Caja y filtro de aire", input.cajaFiltroAire],
+    ["Tanque de combustible", input.tanqueCombustible],
+    ["Compartimiento interior de cabina y dormitorio", input.compartimientoInteriorCabinaDormitorio],
+    ["Rompevientos, deflectores y techo", input.rompevientosDeflectoresTecho],
+    ["Soportes metalicos de carroceria o furgon", input.soportesMetalicosCarroceriaFurgon],
+    ["Quinta rueda", input.quintaRueda],
+  ] as const) {
+    validateRequiredBoolean(value, label);
+  }
 
   for (const [label, value] of [
     ["Estado general externo de la unidad", input.estadoGeneralExternoUnidad],
