@@ -27,14 +27,19 @@ const DRAFT_KEY = "fsu04-form-draft";
 
 const initialForm: Fsu04Input = {
   nombreOperacion: "",
+  tipoOperacion: "",
   fechaHoraSalida: "",
   placaNumeroContenedor: "",
   puertasCerradasSellosInstalados: "",
+  precintoSeguridad: "",
   observaciones: "",
 };
 
 const initialFiles: EvidenciasFsu04Input = {
   fotoFinalUnidadSalida: null,
+  fotoPrecintoCorrea: null,
+  fotoPrecintoBotella: null,
+  fotoOtroPrecinto: null,
 };
 
 export function Fsu04Form() {
@@ -238,6 +243,7 @@ export function Fsu04Form() {
               const nextForm = {
                 ...current,
                 nombreOperacion: operacion.nombre_operacion,
+                tipoOperacion: operacion.tipo_operacion ?? "",
                 fechaHoraSalida: `${operacion.fecha}T${getCurrentTimeForInput()}`,
                 placaNumeroContenedor: operacion.placa,
               };
@@ -286,6 +292,16 @@ export function Fsu04Form() {
             tone="amber"
           />
 
+          {form.tipoOperacion === "Transporte de acopio a puerto" ? (
+            <InputField
+              label="Precinto de seguridad"
+              value={form.precintoSeguridad}
+              onChange={(value) => setField("precintoSeguridad", value)}
+              placeholder="Ingresa el numero o identificacion del precinto"
+              required
+            />
+          ) : null}
+
           <TextAreaField
             label="Observaciones"
             value={form.observaciones}
@@ -306,6 +322,29 @@ export function Fsu04Form() {
             onChange={(file) => setFile("fotoFinalUnidadSalida", file)}
             sourceOptions
           />
+
+          {form.tipoOperacion === "Transporte de acopio a puerto" ? (
+            <div className="grid gap-4 md:grid-cols-3">
+              <FileField
+                label="1. Precinto de correa"
+                file={files.fotoPrecintoCorrea}
+                onChange={(file) => setFile("fotoPrecintoCorrea", file)}
+                sourceOptions
+              />
+              <FileField
+                label="2. Precinto de botella"
+                file={files.fotoPrecintoBotella}
+                onChange={(file) => setFile("fotoPrecintoBotella", file)}
+                sourceOptions
+              />
+              <FileField
+                label="3. Otro precinto (opcional)"
+                file={files.fotoOtroPrecinto}
+                onChange={(file) => setFile("fotoOtroPrecinto", file)}
+                sourceOptions
+              />
+            </div>
+          ) : null}
 
           <button
             type="submit"

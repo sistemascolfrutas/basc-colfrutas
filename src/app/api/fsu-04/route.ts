@@ -39,16 +39,21 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const input: Fsu04Input = {
       nombreOperacion: String(formData.get("nombreOperacion") ?? ""),
+      tipoOperacion: String(formData.get("tipoOperacion") ?? ""),
       fechaHoraSalida: String(formData.get("fechaHoraSalida") ?? ""),
       placaNumeroContenedor: String(formData.get("placaNumeroContenedor") ?? ""),
       puertasCerradasSellosInstalados: String(
         formData.get("puertasCerradasSellosInstalados") ?? "",
       ) as Fsu04Input["puertasCerradasSellosInstalados"],
+      precintoSeguridad: String(formData.get("precintoSeguridad") ?? ""),
       observaciones: String(formData.get("observaciones") ?? ""),
     };
 
     const evidencias: EvidenciasFsu04Input = {
       fotoFinalUnidadSalida: getFile(formData, "fotoFinalUnidadSalida"),
+      fotoPrecintoCorrea: getFile(formData, "fotoPrecintoCorrea"),
+      fotoPrecintoBotella: getFile(formData, "fotoPrecintoBotella"),
+      fotoOtroPrecinto: getFile(formData, "fotoOtroPrecinto"),
     };
 
     const data = await createFsu04SalidaWithClient(supabase, input, evidencias);

@@ -4,9 +4,9 @@ import { useEffect, useState, useTransition } from "react";
 
 import {
   APP_ROLES,
-  FORM_PERMISSIONS,
   PERMISSION_LABELS,
   ROLE_LABELS,
+  USER_ASSIGNABLE_PERMISSIONS,
   type AppRole,
   type AppUserRecord,
   getDefaultPermissionsForRole,
@@ -85,7 +85,9 @@ export function AdminUsersPanel() {
       isActive: user.is_active,
       password: "",
       permissions: user.permissions.filter((value) =>
-        FORM_PERMISSIONS.includes(value as (typeof FORM_PERMISSIONS)[number]),
+        USER_ASSIGNABLE_PERMISSIONS.includes(
+          value as (typeof USER_ASSIGNABLE_PERMISSIONS)[number],
+        ),
       ),
       role: user.role,
     });
@@ -214,7 +216,7 @@ export function AdminUsersPanel() {
 
               <fieldset className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
                 <legend className="px-2 text-sm font-medium text-slate-700">
-                  Formularios permitidos
+                  Permisos asignados
                 </legend>
 
                 {form.role === "admin" ? (
@@ -224,7 +226,7 @@ export function AdminUsersPanel() {
                   </p>
                 ) : (
                   <div className="mt-3 grid gap-3 md:grid-cols-3">
-                    {FORM_PERMISSIONS.map((permission) => {
+                    {USER_ASSIGNABLE_PERMISSIONS.map((permission) => {
                       const checked = form.permissions.includes(permission);
                       return (
                         <label

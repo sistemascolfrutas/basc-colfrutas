@@ -36,6 +36,7 @@ export type AuditEvidence = {
 export async function searchOperaciones(filters: {
   placa?: string;
   fecha?: string;
+  tipoOperacion?: string;
 }) {
   const supabase = getSupabaseBrowserClient();
   return searchOperacionesWithClient(supabase, filters);
@@ -46,8 +47,33 @@ export async function searchOperacionesWithClient(
   filters: {
     placa?: string;
     fecha?: string;
+    tipoOperacion?: string;
   },
 ) {
+  let nombresPorTipo: string[] | null = null;
+
+  if (filters.tipoOperacion?.trim()) {
+    const { data: ingresos, error: ingresosError } = await supabase
+      .from("reg_fsu01_ingreso")
+      .select("nombre_operacion")
+      .eq("tipo_operacion", filters.tipoOperacion.trim())
+      .returns<Array<{ nombre_operacion: string }>>();
+
+    if (ingresosError) {
+      throw new Error(
+        `No fue posible filtrar por tipo de operacion: ${ingresosError.message}`,
+      );
+    }
+
+    nombresPorTipo = (ingresos ?? []).map(
+      (ingreso) => ingreso.nombre_operacion,
+    );
+
+    if (nombresPorTipo.length === 0) {
+      return [];
+    }
+  }
+
   let query = supabase
     .from("operaciones_maestra")
     .select("*")
@@ -60,6 +86,10 @@ export async function searchOperacionesWithClient(
 
   if (filters.fecha?.trim()) {
     query = query.eq("fecha", normalizeOperationDate(filters.fecha));
+  }
+
+  if (nombresPorTipo) {
+    query = query.in("nombre_operacion", nombresPorTipo);
   }
 
   const { data, error } = await query.returns<OperacionMaestraAudit[]>();

@@ -24,7 +24,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = (await request.json()) as { placa?: string; fecha?: string };
+    const body = (await request.json()) as {
+      placa?: string;
+      fecha?: string;
+      tipoOperacion?: string;
+    };
     const data = await searchOperacionesWithClient(supabase, body);
     return NextResponse.json(data);
   } catch (error) {

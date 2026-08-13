@@ -22,15 +22,21 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export const PUERTAS_SELLOS_OPTIONS = ["Si", "No", "No aplica"] as const;
 
-type EvidenciaKey = "fotoFinalUnidadSalida";
+type EvidenciaKey =
+  | "fotoFinalUnidadSalida"
+  | "fotoPrecintoCorrea"
+  | "fotoPrecintoBotella"
+  | "fotoOtroPrecinto";
 
 export type Fsu04Input = {
   nombreOperacion?: string;
+  tipoOperacion?: string;
   fechaHoraSalida: string;
   placaNumeroContenedor: string;
   puertasCerradasSellosInstalados:
     | (typeof PUERTAS_SELLOS_OPTIONS)[number]
     | "";
+  precintoSeguridad: string;
   observaciones: string;
 };
 
@@ -38,11 +44,27 @@ export type EvidenciasFsu04Input = Record<EvidenciaKey, File | null>;
 
 export const EVIDENCIAS_CONFIG: Record<
   EvidenciaKey,
-  { fileName: string; column: string }
+  { fileName: string; column: string; optional?: boolean; sealOnly?: boolean }
 > = {
   fotoFinalUnidadSalida: {
     fileName: "foto-final-unidad-salida",
     column: "foto_final_unidad_salida_url",
+  },
+  fotoPrecintoCorrea: {
+    fileName: "precinto-correa",
+    column: "foto_precinto_correa_url",
+    sealOnly: true,
+  },
+  fotoPrecintoBotella: {
+    fileName: "precinto-botella",
+    column: "foto_precinto_botella_url",
+    sealOnly: true,
+  },
+  fotoOtroPrecinto: {
+    fileName: "otro-precinto",
+    column: "foto_otro_precinto_url",
+    optional: true,
+    sealOnly: true,
   },
 };
 
@@ -72,6 +94,13 @@ export async function createFsu04SalidaWithClient(
       nombreOperacion,
     });
 
+  if (requiereFlujoCompleto) {
+    validateRequiredText(input.precintoSeguridad, "El precinto de seguridad");
+    validateImageFile(evidencias.fotoPrecintoCorrea, "Precinto de correa");
+    validateImageFile(evidencias.fotoPrecintoBotella, "Precinto de botella");
+    validateImageFile(evidencias.fotoOtroPrecinto, "Otro precinto", true);
+  }
+
   const evidenciasFolder =
     operacion.ruta_evidencias_folder ?? `evidencias/${nombreOperacion}`;
 
@@ -80,6 +109,7 @@ export async function createFsu04SalidaWithClient(
     evidenciasFolder,
     nombreOperacion,
     evidencias,
+    requiereFlujoCompleto,
   );
 
   const payload = {
@@ -88,6 +118,9 @@ export async function createFsu04SalidaWithClient(
     placa_numero_contenedor: placa,
     puertas_cerradas_sellos_instalados:
       input.puertasCerradasSellosInstalados,
+    precinto_seguridad: requiereFlujoCompleto
+      ? input.precintoSeguridad.trim()
+      : null,
     observaciones: input.observaciones.trim() || null,
     ...uploadedUrls,
   };
@@ -111,6 +144,7 @@ async function uploadFsu04Evidencias(
   evidenciasFolder: string,
   nombreOperacion: string,
   evidencias: EvidenciasFsu04Input,
+  requiereFlujoCompleto: boolean,
 ) {
   const bucketName =
     process.env.NEXT_PUBLIC_SUPABASE_EVIDENCIAS_BUCKET || "evidencias-basc";
@@ -119,12 +153,21 @@ async function uploadFsu04Evidencias(
   for (const [key, file] of Object.entries(evidencias) as Array<
     [EvidenciaKey, File | null]
   >) {
+    const config = EVIDENCIAS_CONFIG[key];
+
+    if (config.sealOnly && !requiereFlujoCompleto) {
+      continue;
+    }
+
     if (!file) {
+      if (config.optional) {
+        continue;
+      }
+
       throw new Error(`Falta cargar el archivo obligatorio: ${key}.`);
     }
 
     const extension = getFileExtension(file.name);
-    const config = EVIDENCIAS_CONFIG[key];
     const path = `${evidenciasFolder}/fsu04/${config.fileName}-${nombreOperacion}.${extension}`;
 
     const { error } = await supabase.storage
@@ -170,6 +213,7 @@ export function validateFsu04Input(
     evidencias.fotoFinalUnidadSalida,
     "Foto final de la unidad al momento de la salida",
   );
+
 }
 
 export function getOperationDateFromDateTime(value: string) {

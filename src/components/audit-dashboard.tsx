@@ -10,12 +10,14 @@ import {
   type OperacionMaestraAudit,
 } from "@/lib/audit";
 import { formatEvidenceLabel, normalizeEvidenceUrl } from "@/lib/evidence";
+import { TIPO_OPERACION_OPTIONS } from "@/lib/fsu01";
 
 const TIPO_OPERACION_CONTINUA_FLUJO = "Transporte de acopio a puerto";
 
 export function AuditDashboard() {
   const [placa, setPlaca] = useState("");
   const [fecha, setFecha] = useState("");
+  const [tipoOperacion, setTipoOperacion] = useState("");
   const [results, setResults] = useState<OperacionMaestraAudit[]>([]);
   const [selected, setSelected] = useState<AuditDetail | null>(null);
   const [activeEvidence, setActiveEvidence] = useState<AuditEvidence | null>(null);
@@ -63,7 +65,11 @@ export function AuditDashboard() {
 
     startTransition(async () => {
       try {
-        const data = await searchOperacionesRequest({ placa, fecha });
+        const data = await searchOperacionesRequest({
+          placa,
+          fecha,
+          tipoOperacion,
+        });
         setResults(data);
         setSelected(null);
         setSearchMessage(
@@ -139,13 +145,28 @@ export function AuditDashboard() {
               </div>
             </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-[1fr_1fr_auto_auto] md:items-end">
+            <div className="mt-6 grid gap-4 md:grid-cols-[1fr_1fr_1fr_auto_auto] md:items-end">
               <Field
                 label="Placa"
                 value={placa}
                 onChange={setPlaca}
                 placeholder="Ej. BNL26F"
               />
+              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+                Tipo de operacion
+                <select
+                  value={tipoOperacion}
+                  onChange={(event) => setTipoOperacion(event.target.value)}
+                  className="min-h-[52px] rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-base text-slate-900 outline-none transition focus:border-sky-500 focus:bg-white"
+                >
+                  <option value="">Todos los tipos</option>
+                  {TIPO_OPERACION_OPTIONS.map((tipo) => (
+                    <option key={tipo} value={tipo}>
+                      {tipo}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <Field
                 label="Fecha"
                 type="date"
@@ -167,6 +188,7 @@ export function AuditDashboard() {
                 onClick={() => {
                   setPlaca("");
                   setFecha("");
+                  setTipoOperacion("");
                   setSelected(null);
                   setSearchMessage(null);
                   setErrorMessage(null);
@@ -247,6 +269,7 @@ export function AuditDashboard() {
 async function searchOperacionesRequest(filters: {
   placa?: string;
   fecha?: string;
+  tipoOperacion?: string;
 }) {
   const response = await fetch("/api/audit/search", {
     method: "POST",

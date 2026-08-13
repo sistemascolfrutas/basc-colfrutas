@@ -16,6 +16,7 @@ type OperacionMaestraRecord = {
   estado_cargue: string;
   estado_salida: string;
   ruta_evidencias_folder: string | null;
+  tipo_operacion?: string;
 };
 
 export type { OperacionMaestraRecord };
@@ -478,8 +479,18 @@ async function getPendingSalidaOperacionesWithClient(supabase: SupabaseClient) {
     );
   }
 
+  const tiposOperacion = new Map(
+    (ingresosRes.data ?? []).map((record) => [
+      record.nombre_operacion,
+      record.tipo_operacion ?? "",
+    ]),
+  );
+
   const order = new Map(pendingNames.map((name, index) => [name, index]));
-  return (operaciones ?? []).sort(
+  return (operaciones ?? []).map((operacion) => ({
+    ...operacion,
+    tipo_operacion: tiposOperacion.get(operacion.nombre_operacion) ?? "",
+  })).sort(
     (a, b) =>
       (order.get(a.nombre_operacion) ?? 0) -
       (order.get(b.nombre_operacion) ?? 0),

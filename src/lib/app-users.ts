@@ -15,6 +15,11 @@ export const APP_PERMISSIONS = [
 ] as const;
 export type AppPermission = (typeof APP_PERMISSIONS)[number];
 
+export const USER_ASSIGNABLE_PERMISSIONS = [
+  ...FORM_PERMISSIONS,
+  "audit",
+] as const satisfies readonly AppPermission[];
+
 export const ROLE_LABELS: Record<AppRole, string> = {
   admin: "Administrador",
   porteria: "Porteria",
@@ -77,8 +82,8 @@ export function buildPermissionsForRole(
   }
 
   const requested = Array.isArray(permissions) ? permissions : [];
-  const normalized = requested.filter((value): value is FormPermission =>
-    FORM_PERMISSIONS.includes(value as FormPermission),
+  const normalized = requested.filter((value): value is AppPermission =>
+    USER_ASSIGNABLE_PERMISSIONS.includes(value as (typeof USER_ASSIGNABLE_PERMISSIONS)[number]),
   );
 
   return Array.from(new Set(normalized));
@@ -127,7 +132,7 @@ export function validateAppUserInput(input: AppUserInput) {
   const permissions = buildPermissionsForRole(role, input.permissions);
 
   if (role !== "admin" && permissions.length === 0) {
-    throw new Error("Debes asignar al menos un formulario al usuario.");
+    throw new Error("Debes asignar al menos un permiso al usuario.");
   }
 
   return {
