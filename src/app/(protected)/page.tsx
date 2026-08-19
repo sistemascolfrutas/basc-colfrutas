@@ -29,6 +29,12 @@ const actions = [
     permission: "fsu04" as const,
   },
   {
+    href: "/precintos",
+    title: "PRECINTOS",
+    description: "Registrar la asignacion de kits de seguridad de COLFRUTAS para custodia de ATEMPI.",
+    permission: "precintos" as const,
+  },
+  {
     href: "/auditoria",
     title: "Auditoria",
     description: "Buscar operaciones por placa o fecha y revisar formularios y evidencias.",
@@ -44,6 +50,12 @@ const actions = [
     href: "/admin/responsables",
     title: "Responsables",
     description: "Crear, editar y eliminar las opciones de responsables.",
+    permission: "user_admin" as const,
+  },
+  {
+    href: "/admin/empleados-precintos",
+    title: "Empleados de precintos",
+    description: "Administrar empleados de COLFRUTAS y ATEMPI disponibles en el formulario de precintos.",
     permission: "user_admin" as const,
   },
 ];

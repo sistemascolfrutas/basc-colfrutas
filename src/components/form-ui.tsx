@@ -30,7 +30,7 @@ type SelectFieldProps = {
   label: string;
   value: string;
   onChange: (value: string) => void;
-  options: readonly string[];
+  options: readonly (string | { value: string; label: string })[];
   required?: boolean;
   disabled?: boolean;
   tone: "sky" | "amber" | "rose";
@@ -188,8 +188,11 @@ export function SelectField({
       >
         <option value="">Seleccione una opcion</option>
         {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
+          <option
+            key={typeof option === "string" ? option : option.value}
+            value={typeof option === "string" ? option : option.value}
+          >
+            {typeof option === "string" ? option : option.label}
           </option>
         ))}
       </select>
