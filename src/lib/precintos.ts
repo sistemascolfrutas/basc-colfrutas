@@ -14,7 +14,11 @@ export async function createPrecintosAsignacion(
   input: PrecintosInput,
   kits: PrecintosKitInput[],
   firmas: PrecintosFirmasInput,
+  config: { table?: string; storageFolder?: string; action?: string } = {},
 ) {
+  const table = config.table ?? "precintos_asignaciones";
+  const storageFolder = config.storageFolder ?? "precintos";
+  const action = config.action ?? PRECINTOS_ACCION;
   const cantidad = Number(input.cantidadKits);
   if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > 4) throw new Error("La cantidad de kits debe estar entre 1 y 4.");
   if (kits.length !== cantidad) throw new Error("Debes completar la informacion de cada kit.");
@@ -41,15 +45,15 @@ export async function createPrecintosAsignacion(
   for (let index = 0; index < kits.length; index += 1) {
     const kit = kits[index];
     const extension = kit.foto!.name.split(".").at(-1)?.toLowerCase() || "jpg";
-    const path = `precintos/${assignmentId}/kit-${index + 1}.${extension}`;
+    const path = `${storageFolder}/${assignmentId}/kit-${index + 1}.${extension}`;
     const { error } = await supabase.storage.from(bucket).upload(path, kit.foto!, { upsert: false });
     if (error) throw new Error(`No fue posible subir la fotografia del kit ${index + 1}: ${error.message}`);
     storedKits.push({ numero: normalizedNumbers[index], foto_url: path });
   }
 
   const signaturePaths = {
-    firma_empleado_atempi_url: `precintos/${assignmentId}/firma-empleado-atempi.png`,
-    firma_empleado_colfrutas_url: `precintos/${assignmentId}/firma-empleado-colfrutas.png`,
+    firma_empleado_atempi_url: `${storageFolder}/${assignmentId}/firma-empleado-atempi.png`,
+    firma_empleado_colfrutas_url: `${storageFolder}/${assignmentId}/firma-empleado-colfrutas.png`,
   };
   const signatureFiles = {
     firma_empleado_atempi_url: firmas.firmaEmpleadoAtempi!,
@@ -63,11 +67,11 @@ export async function createPrecintosAsignacion(
   const now = new Date();
   const dateFormatter = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota", year: "numeric", month: "2-digit", day: "2-digit" });
   const timeFormatter = new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
-  const { data, error } = await supabase.from("precintos_asignaciones").insert({
+  const { data, error } = await supabase.from(table).insert({
     id: assignmentId,
     fecha: dateFormatter.format(now),
     hora: timeFormatter.format(now),
-    accion: PRECINTOS_ACCION,
+    accion: action,
     empleado_colfrutas_id: colfrutas.id,
     empleado_colfrutas_nombre: colfrutas.nombre,
     empleado_colfrutas_cedula: colfrutas.cedula,

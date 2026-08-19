@@ -35,6 +35,12 @@ const actions = [
     permission: "precintos" as const,
   },
   {
+    href: "/salida-precintos",
+    title: "SALIDA DE PRECINTO",
+    description: "Registrar la salida de kits de seguridad de ATEMPI para custodia de COLFRUTAS Paletizado.",
+    permission: "precintos" as const,
+  },
+  {
     href: "/auditoria",
     title: "Auditoria",
     description: "Buscar operaciones por placa o fecha y revisar formularios y evidencias.",

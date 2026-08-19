@@ -6,11 +6,15 @@ import { FileField, FloatingNotice, InputField, SectionTitle, SelectField } from
 import { SignaturePad } from "@/components/signature-pad";
 import { PRECINTOS_ACCION } from "@/lib/precintos";
 import type { PrecintosEmpleado } from "@/lib/precintos-empleados";
+import { SALIDA_PRECINTOS_ACCION } from "@/lib/salida-precintos";
 
 type KitState = { numero: string; foto: File | null };
 const emptyKit = (): KitState => ({ numero: "", foto: null });
 
-export function PrecintosForm() {
+export function PrecintosForm({ mode = "entrada" }: { mode?: "entrada" | "salida" }) {
+  const isSalida = mode === "salida";
+  const moduleTitle = isSalida ? "SALIDA DE PRECINTO" : "ENTRADA DE PRECINTO";
+  const action = isSalida ? SALIDA_PRECINTOS_ACCION : PRECINTOS_ACCION;
   const [empleados, setEmpleados] = useState<PrecintosEmpleado[]>([]);
   const [colfrutasId, setColfrutasId] = useState("");
   const [atempiId, setAtempiId] = useState("");
@@ -66,10 +70,10 @@ export function PrecintosForm() {
           payload.set(`numeroKit${index}`, kit.numero);
           if (kit.foto) payload.set(`fotoKit${index}`, kit.foto);
         });
-        const response = await fetch("/api/precintos", { method: "POST", body: payload });
+        const response = await fetch(isSalida ? "/api/salida-precintos" : "/api/precintos", { method: "POST", body: payload });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error || "No fue posible guardar la asignacion.");
-        setMessage("Asignacion de kits de seguridad guardada correctamente.");
+        setMessage(`${isSalida ? "Salida" : "Entrada"} de precinto guardada correctamente.`);
         setColfrutasId("");
         setAtempiId("");
         setCantidad(1);
@@ -93,8 +97,8 @@ export function PrecintosForm() {
         <header className="rounded-[2rem] border border-white/60 bg-white/90 p-8 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <span className="inline-flex rounded-full bg-emerald-100 px-4 py-1 text-xs font-bold uppercase tracking-[0.28em] text-emerald-800">ENTRADA DE PRECINTO</span>
-              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">Entrada de precinto</h1>
+              <span className="inline-flex rounded-full bg-emerald-100 px-4 py-1 text-xs font-bold uppercase tracking-[0.28em] text-emerald-800">{moduleTitle}</span>
+              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">{isSalida ? "Salida de precinto" : "Entrada de precinto"}</h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">Registra la entrega de ATEMPI y la recepcion de COLFRUTAS, con los kits de seguridad y sus evidencias fotograficas.</p>
             </div>
             <Link href="/" className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100">Volver al inicio</Link>
@@ -106,7 +110,7 @@ export function PrecintosForm() {
           <div className="grid gap-4 md:grid-cols-3">
             <InputField label="Fecha" value={fecha} onChange={() => undefined} disabled />
             <InputField label="Hora de inicio" value={hora} onChange={() => undefined} disabled />
-            <InputField label="Accion a realizar" value={PRECINTOS_ACCION} onChange={() => undefined} disabled />
+            <InputField label="Accion a realizar" value={action} onChange={() => undefined} disabled />
           </div>
 
           <SectionTitle eyebrow="Participantes" title="Entrega y custodia" tone="sky" />
@@ -144,7 +148,7 @@ export function PrecintosForm() {
             La hora final se registrara automaticamente al guardar la asignacion.
           </div>
           <button type="submit" disabled={isPending || empleados.length === 0} className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-400">
-            {isPending ? "Guardando asignacion..." : "Guardar asignacion de kits"}
+            {isPending ? "Guardando asignacion..." : `Guardar ${isSalida ? "salida" : "entrada"} de precinto`}
           </button>
           {empleados.length === 0 ? <p className="text-center text-sm text-amber-700">Un administrador debe registrar empleados de COLFRUTAS y ATEMPI antes de usar el formulario.</p> : null}
         </form>
