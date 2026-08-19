@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 
 import { generateAuditPdf } from "@/lib/audit-report";
+import { AuditPrecintosSection } from "@/components/audit-precintos-section";
 import {
   type AuditDetail,
   type AuditEvidence,
@@ -253,6 +254,8 @@ export function AuditDashboard() {
             }}
             isGeneratingPdf={isGeneratingPdf}
           />
+
+          <AuditPrecintosSection />
         </section>
       </main>
 

@@ -72,7 +72,7 @@ using (
     select 1 from public.app_users
     where is_active = true
       and (auth.uid() = auth_user_id or lower(coalesce(auth.jwt() ->> 'email', '')) = email)
-      and (role = 'admin' or permissions && array['precintos', 'audit']::text[])
+      and (role = 'admin' or permissions && array['salida_precintos', 'audit']::text[])
   )
 );
 
@@ -84,7 +84,7 @@ with check (
     select 1 from public.app_users
     where is_active = true
       and (auth.uid() = auth_user_id or lower(coalesce(auth.jwt() ->> 'email', '')) = email)
-      and (role = 'admin' or 'precintos' = any(permissions))
+      and (role = 'admin' or 'salida_precintos' = any(permissions))
   )
 );
 
@@ -98,7 +98,7 @@ using (
     select 1 from public.app_users
     where is_active = true
       and (auth.uid() = auth_user_id or lower(coalesce(auth.jwt() ->> 'email', '')) = email)
-      and (role = 'admin' or permissions && array['precintos', 'audit']::text[])
+      and (role = 'admin' or permissions && array['salida_precintos', 'audit']::text[])
   )
 );
 
@@ -112,7 +112,7 @@ with check (
     select 1 from public.app_users
     where is_active = true
       and (auth.uid() = auth_user_id or lower(coalesce(auth.jwt() ->> 'email', '')) = email)
-      and (role = 'admin' or 'precintos' = any(permissions))
+      and (role = 'admin' or 'salida_precintos' = any(permissions))
   )
 );
 

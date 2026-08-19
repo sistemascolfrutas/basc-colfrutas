@@ -47,7 +47,7 @@ export function AdminPrecintosEmpleadosPanel() {
       <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 md:px-10">
         <header className="rounded-[2rem] border border-white/60 bg-white/90 p-8 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
           <span className="inline-flex rounded-full bg-emerald-100 px-4 py-1 text-xs font-bold uppercase tracking-[0.28em] text-emerald-800">Administracion</span>
-          <h1 className="mt-4 text-4xl font-semibold text-slate-950">Empleados de entrada de precinto</h1>
+          <h1 className="mt-4 text-4xl font-semibold text-slate-950">Personas precintos</h1>
           <p className="mt-3 text-sm text-slate-600">Gestiona las listas de empleados COLFRUTAS y ATEMPI que aparecen en el formulario.</p>
         </header>
         <div className="grid gap-8 xl:grid-cols-[0.85fr_1.15fr]">

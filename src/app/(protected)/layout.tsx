@@ -12,7 +12,7 @@ const navItems = [
   { href: "/fsu-03", label: "F-SU-03", permission: "fsu03" as const },
   { href: "/fsu-04", label: "F-SU-04", permission: "fsu04" as const },
   { href: "/precintos", label: "ENTRADA DE PRECINTO", permission: "precintos" as const },
-  { href: "/salida-precintos", label: "SALIDA DE PRECINTO", permission: "precintos" as const },
+  { href: "/salida-precintos", label: "SALIDA DE PRECINTO", permission: "salida_precintos" as const },
   { href: "/auditoria", label: "Auditoria", permission: "audit" as const },
   {
     href: "/admin/usuarios",
@@ -26,7 +26,7 @@ const navItems = [
   },
   {
     href: "/admin/empleados-precintos",
-    label: "Empleados entrada",
+    label: "Personas precintos",
     permission: "user_admin" as const,
   },
 ];

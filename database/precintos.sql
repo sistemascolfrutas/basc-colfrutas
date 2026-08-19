@@ -45,7 +45,7 @@ create policy "precintos_empleados_read" on public.precintos_empleados
 for select to authenticated using (
   exists (select 1 from public.app_users where is_active = true
     and (auth.uid() = auth_user_id or lower(coalesce(auth.jwt() ->> 'email', '')) = email)
-    and (role = 'admin' or permissions && array['precintos', 'user_admin']::text[]))
+    and (role = 'admin' or permissions && array['precintos', 'salida_precintos', 'user_admin']::text[]))
 );
 
 drop policy if exists "precintos_asignaciones_insert" on public.precintos_asignaciones;

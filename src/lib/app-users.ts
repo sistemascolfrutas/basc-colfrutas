@@ -11,6 +11,7 @@ export type FormPermission = (typeof FORM_PERMISSIONS)[number];
 export const APP_PERMISSIONS = [
   ...FORM_PERMISSIONS,
   "precintos",
+  "salida_precintos",
   "audit",
   "user_admin",
 ] as const;
@@ -19,6 +20,7 @@ export type AppPermission = (typeof APP_PERMISSIONS)[number];
 export const USER_ASSIGNABLE_PERMISSIONS = [
   ...FORM_PERMISSIONS,
   "precintos",
+  "salida_precintos",
   "audit",
 ] as const satisfies readonly AppPermission[];
 
@@ -34,6 +36,7 @@ export const PERMISSION_LABELS: Record<AppPermission, string> = {
   fsu03: "F-SU-03",
   fsu04: "F-SU-04",
   precintos: "Entrada de precinto",
+  salida_precintos: "Salida de precinto",
   audit: "Auditoria",
   user_admin: "Gestion de usuarios",
 };

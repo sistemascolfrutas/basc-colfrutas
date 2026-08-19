@@ -38,7 +38,7 @@ const actions = [
     href: "/salida-precintos",
     title: "SALIDA DE PRECINTO",
     description: "Registrar la salida de kits de seguridad de ATEMPI para custodia de COLFRUTAS Paletizado.",
-    permission: "precintos" as const,
+    permission: "salida_precintos" as const,
   },
   {
     href: "/auditoria",
@@ -60,7 +60,7 @@ const actions = [
   },
   {
     href: "/admin/empleados-precintos",
-    title: "Empleados de entrada de precinto",
+    title: "Personas precintos",
     description: "Administrar empleados de COLFRUTAS y ATEMPI disponibles en el formulario de entrada de precinto.",
     permission: "user_admin" as const,
   },

@@ -7,7 +7,7 @@ import { createSalidaPrecinto } from "@/lib/salida-precintos";
 export async function POST(request: Request) {
   const rate = consumeRateLimit(`api:salida-precintos:${getClientIp(request.headers)}`, { limit: 20, windowMs: 300000 });
   if (!rate.allowed) return NextResponse.json({ error: `Demasiadas solicitudes. Intenta de nuevo en ${rate.retryAfterSeconds} segundos.` }, { status: 429 });
-  const { errorResponse, supabase, user } = await getAuthorizedServerClient("precintos");
+  const { errorResponse, supabase, user } = await getAuthorizedServerClient("salida_precintos");
   if (errorResponse || !supabase || !user) return errorResponse;
   try {
     const formData = await request.formData();
