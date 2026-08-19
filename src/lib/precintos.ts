@@ -4,14 +4,16 @@ import { listPrecintosEmpleados } from "@/lib/precintos-empleados";
 
 export const PRECINTOS_ACCION = "Asignacion de Kit Seguridad por parte de COLFRUTAS";
 
-export type PrecintosInput = { empleadoColfrutasId: string; empleadoAtempiId: string; cantidadKits: number };
+export type PrecintosInput = { empleadoColfrutasId: string; empleadoAtempiId: string; cantidadKits: number; observaciones: string };
 export type PrecintosKitInput = { numero: string; foto: File | null };
+export type PrecintosFirmasInput = { firmaEmpleadoAtempi: File | null; firmaEmpleadoColfrutas: File | null };
 
 export async function createPrecintosAsignacion(
   supabase: SupabaseClient,
   userId: string,
   input: PrecintosInput,
   kits: PrecintosKitInput[],
+  firmas: PrecintosFirmasInput,
 ) {
   const cantidad = Number(input.cantidadKits);
   if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > 4) throw new Error("La cantidad de kits debe estar entre 1 y 4.");
@@ -23,6 +25,8 @@ export async function createPrecintosAsignacion(
   if (!colfrutas) throw new Error("Selecciona un empleado activo de COLFRUTAS.");
   if (!atempi) throw new Error("Selecciona un empleado activo de ATEMPI.");
   if (!colfrutas.cargo) throw new Error("El empleado COLFRUTAS seleccionado no tiene cargo configurado.");
+  validateImageFile(firmas.firmaEmpleadoAtempi, "Firma del empleado ATEMPI que entrega");
+  validateImageFile(firmas.firmaEmpleadoColfrutas, "Firma del empleado COLFRUTAS que recibe");
 
   kits.forEach((kit, index) => {
     validateRequiredText(kit.numero, `El numero del kit ${index + 1}`);
@@ -43,6 +47,19 @@ export async function createPrecintosAsignacion(
     storedKits.push({ numero: normalizedNumbers[index], foto_url: path });
   }
 
+  const signaturePaths = {
+    firma_empleado_atempi_url: `precintos/${assignmentId}/firma-empleado-atempi.png`,
+    firma_empleado_colfrutas_url: `precintos/${assignmentId}/firma-empleado-colfrutas.png`,
+  };
+  const signatureFiles = {
+    firma_empleado_atempi_url: firmas.firmaEmpleadoAtempi!,
+    firma_empleado_colfrutas_url: firmas.firmaEmpleadoColfrutas!,
+  };
+  for (const column of Object.keys(signatureFiles) as Array<keyof typeof signatureFiles>) {
+    const { error } = await supabase.storage.from(bucket).upload(signaturePaths[column], signatureFiles[column], { upsert: false, contentType: "image/png" });
+    if (error) throw new Error(`No fue posible guardar la firma: ${error.message}`);
+  }
+
   const now = new Date();
   const dateFormatter = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota", year: "numeric", month: "2-digit", day: "2-digit" });
   const timeFormatter = new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
@@ -60,6 +77,10 @@ export async function createPrecintosAsignacion(
     empleado_atempi_cedula: atempi.cedula,
     cantidad_kits: cantidad,
     kits: storedKits,
+    observaciones: input.observaciones.trim() || null,
+    firma_empleado_atempi_url: signaturePaths.firma_empleado_atempi_url,
+    hora_final: timeFormatter.format(new Date()),
+    firma_empleado_colfrutas_url: signaturePaths.firma_empleado_colfrutas_url,
     created_by: userId,
   }).select("*").single();
   if (error) throw new Error(`No fue posible guardar la asignacion: ${error.message}`);

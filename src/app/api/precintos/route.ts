@@ -19,9 +19,18 @@ export async function POST(request: Request) {
       empleadoColfrutasId: String(formData.get("empleadoColfrutasId") ?? ""),
       empleadoAtempiId: String(formData.get("empleadoAtempiId") ?? ""),
       cantidadKits,
-    }, kits);
+      observaciones: String(formData.get("observaciones") ?? ""),
+    }, kits, {
+      firmaEmpleadoAtempi: getFile(formData, "firmaEmpleadoAtempi"),
+      firmaEmpleadoColfrutas: getFile(formData, "firmaEmpleadoColfrutas"),
+    });
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "No fue posible guardar la asignacion." }, { status: 400 });
   }
+}
+
+function getFile(formData: FormData, key: string) {
+  const value = formData.get(key);
+  return value instanceof File && value.size > 0 ? value : null;
 }

@@ -47,7 +47,7 @@ export function AdminPrecintosEmpleadosPanel() {
       <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 md:px-10">
         <header className="rounded-[2rem] border border-white/60 bg-white/90 p-8 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
           <span className="inline-flex rounded-full bg-emerald-100 px-4 py-1 text-xs font-bold uppercase tracking-[0.28em] text-emerald-800">Administracion</span>
-          <h1 className="mt-4 text-4xl font-semibold text-slate-950">Empleados de precintos</h1>
+          <h1 className="mt-4 text-4xl font-semibold text-slate-950">Empleados de entrada de precinto</h1>
           <p className="mt-3 text-sm text-slate-600">Gestiona las listas de empleados COLFRUTAS y ATEMPI que aparecen en el formulario.</p>
         </header>
         <div className="grid gap-8 xl:grid-cols-[0.85fr_1.15fr]">
@@ -63,7 +63,7 @@ export function AdminPrecintosEmpleadosPanel() {
             {error ? <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p> : null}
           </form>
           <section className="rounded-[2rem] bg-slate-950 p-6 text-white shadow-xl md:p-8">
-            <div className="flex justify-between gap-4"><div><h2 className="text-xl font-semibold">Empleados registrados</h2><p className="mt-2 text-sm text-slate-300">Los empleados activos aparecen en PRECINTOS.</p></div><span className="h-fit rounded-full bg-slate-800 px-4 py-2 text-sm">{items.length}</span></div>
+            <div className="flex justify-between gap-4"><div><h2 className="text-xl font-semibold">Empleados registrados</h2><p className="mt-2 text-sm text-slate-300">Los empleados activos aparecen en ENTRADA DE PRECINTO.</p></div><span className="h-fit rounded-full bg-slate-800 px-4 py-2 text-sm">{items.length}</span></div>
             <div className="mt-6 overflow-x-auto rounded-3xl border border-slate-800">
               <table className="w-full min-w-[680px] text-left text-sm"><thead className="bg-slate-900 text-xs uppercase text-slate-400"><tr><th className="px-4 py-3">Empresa</th><th className="px-4 py-3">Nombre</th><th className="px-4 py-3">Cedula</th><th className="px-4 py-3">Cargo</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3 text-right">Acciones</th></tr></thead>
                 <tbody className="divide-y divide-slate-800">{items.map((item) => <tr key={item.id}><td className="px-4 py-4 font-semibold text-emerald-300">{item.empresa}</td><td className="px-4 py-4">{item.nombre}</td><td className="px-4 py-4">{item.cedula}</td><td className="px-4 py-4">{item.cargo ?? "—"}</td><td className="px-4 py-4">{item.is_active ? "Activo" : "Inactivo"}</td><td className="px-4 py-4"><div className="flex justify-end gap-2"><button onClick={() => edit(item)} className="rounded-xl border border-slate-700 px-3 py-2 text-xs">Editar</button><button onClick={() => remove(item.id)} className="rounded-xl border border-rose-700 px-3 py-2 text-xs text-rose-300">Eliminar</button></div></td></tr>)}</tbody>

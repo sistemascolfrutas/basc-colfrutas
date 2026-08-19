@@ -33,7 +33,7 @@ export const PERMISSION_LABELS: Record<AppPermission, string> = {
   fsu02: "F-SU-02",
   fsu03: "F-SU-03",
   fsu04: "F-SU-04",
-  precintos: "Precintos",
+  precintos: "Entrada de precinto",
   audit: "Auditoria",
   user_admin: "Gestion de usuarios",
 };

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { FileField, FloatingNotice, InputField, SectionTitle, SelectField } from "@/components/form-ui";
+import { SignaturePad } from "@/components/signature-pad";
 import { PRECINTOS_ACCION } from "@/lib/precintos";
 import type { PrecintosEmpleado } from "@/lib/precintos-empleados";
 
@@ -15,6 +16,10 @@ export function PrecintosForm() {
   const [atempiId, setAtempiId] = useState("");
   const [cantidad, setCantidad] = useState(1);
   const [kits, setKits] = useState<KitState[]>([emptyKit()]);
+  const [observaciones, setObservaciones] = useState("");
+  const [firmaAtempi, setFirmaAtempi] = useState<File | null>(null);
+  const [firmaColfrutas, setFirmaColfrutas] = useState<File | null>(null);
+  const [signatureReset, setSignatureReset] = useState(0);
   const [clock, setClock] = useState(() => new Date());
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -54,6 +59,9 @@ export function PrecintosForm() {
         payload.set("empleadoColfrutasId", colfrutasId);
         payload.set("empleadoAtempiId", atempiId);
         payload.set("cantidadKits", String(cantidad));
+        payload.set("observaciones", observaciones);
+        if (firmaAtempi) payload.set("firmaEmpleadoAtempi", firmaAtempi);
+        if (firmaColfrutas) payload.set("firmaEmpleadoColfrutas", firmaColfrutas);
         kits.forEach((kit, index) => {
           payload.set(`numeroKit${index}`, kit.numero);
           if (kit.foto) payload.set(`fotoKit${index}`, kit.foto);
@@ -66,6 +74,10 @@ export function PrecintosForm() {
         setAtempiId("");
         setCantidad(1);
         setKits([emptyKit()]);
+        setObservaciones("");
+        setFirmaAtempi(null);
+        setFirmaColfrutas(null);
+        setSignatureReset((current) => current + 1);
       } catch (error) {
         setErrorMessage(error instanceof Error ? error.message : "No fue posible guardar la asignacion.");
       }
@@ -81,9 +93,9 @@ export function PrecintosForm() {
         <header className="rounded-[2rem] border border-white/60 bg-white/90 p-8 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <span className="inline-flex rounded-full bg-emerald-100 px-4 py-1 text-xs font-bold uppercase tracking-[0.28em] text-emerald-800">PRECINTOS</span>
-              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">Asignacion de kit de seguridad</h1>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">Asignacion de COLFRUTAS para custodia de ATEMPI. Registra entre uno y cuatro kits con su evidencia fotografica.</p>
+              <span className="inline-flex rounded-full bg-emerald-100 px-4 py-1 text-xs font-bold uppercase tracking-[0.28em] text-emerald-800">ENTRADA DE PRECINTO</span>
+              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">Entrada de precinto</h1>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">Registra la entrega de ATEMPI y la recepcion de COLFRUTAS, con los kits de seguridad y sus evidencias fotograficas.</p>
             </div>
             <Link href="/" className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100">Volver al inicio</Link>
           </div>
@@ -118,6 +130,18 @@ export function PrecintosForm() {
                 <FileField label={`Fotografia del kit ${index + 1}`} file={kit.foto} onChange={(foto) => updateKit(index, { foto })} sourceOptions />
               </section>
             ))}
+          </div>
+          <SectionTitle eyebrow="Cierre de entrega" title="Observaciones y firmas" tone="sky" />
+          <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+            Observaciones
+            <textarea value={observaciones} onChange={(event) => setObservaciones(event.target.value)} rows={4} placeholder="Registra novedades u observaciones de la entrega" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-base text-slate-900 outline-none focus:border-sky-500 focus:bg-white" />
+          </label>
+          <div className="grid gap-5 md:grid-cols-2">
+            <SignaturePad key={`atempi-${signatureReset}`} label="Firma empleado ATEMPI quien entrega" onChange={setFirmaAtempi} />
+            <SignaturePad key={`colfrutas-${signatureReset}`} label="Firma empleado COLFRUTAS quien recibe" onChange={setFirmaColfrutas} />
+          </div>
+          <div className="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+            La hora final se registrara automaticamente al guardar la asignacion.
           </div>
           <button type="submit" disabled={isPending || empleados.length === 0} className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-400">
             {isPending ? "Guardando asignacion..." : "Guardar asignacion de kits"}

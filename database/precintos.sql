@@ -26,6 +26,10 @@ create table if not exists public.precintos_asignaciones (
   empleado_atempi_cedula text not null,
   cantidad_kits smallint not null check (cantidad_kits between 1 and 4),
   kits jsonb not null check (jsonb_typeof(kits) = 'array' and jsonb_array_length(kits) between 1 and 4),
+  observaciones text,
+  firma_empleado_atempi_url text,
+  hora_final time,
+  firma_empleado_colfrutas_url text,
   created_by uuid,
   created_at timestamptz not null default now()
 );

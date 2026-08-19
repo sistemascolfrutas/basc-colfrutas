@@ -11,7 +11,7 @@ const navItems = [
   { href: "/fsu-02", label: "F-SU-02", permission: "fsu02" as const },
   { href: "/fsu-03", label: "F-SU-03", permission: "fsu03" as const },
   { href: "/fsu-04", label: "F-SU-04", permission: "fsu04" as const },
-  { href: "/precintos", label: "PRECINTOS", permission: "precintos" as const },
+  { href: "/precintos", label: "ENTRADA DE PRECINTO", permission: "precintos" as const },
   { href: "/auditoria", label: "Auditoria", permission: "audit" as const },
   {
     href: "/admin/usuarios",
@@ -25,7 +25,7 @@ const navItems = [
   },
   {
     href: "/admin/empleados-precintos",
-    label: "Empleados precintos",
+    label: "Empleados entrada",
     permission: "user_admin" as const,
   },
 ];
