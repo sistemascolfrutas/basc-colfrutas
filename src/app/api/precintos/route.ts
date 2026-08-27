@@ -17,6 +17,9 @@ export async function POST(request: Request) {
     });
     const data = await createPrecintosAsignacion(supabase, user.id, {
       empleadoColfrutasId: String(formData.get("empleadoColfrutasId") ?? ""),
+      empleadoColfrutasNombreManual: String(formData.get("empleadoColfrutasNombreManual") ?? ""),
+      empleadoColfrutasCedulaManual: String(formData.get("empleadoColfrutasCedulaManual") ?? ""),
+      empleadoColfrutasCargoManual: String(formData.get("empleadoColfrutasCargoManual") ?? ""),
       empleadoAtempiId: String(formData.get("empleadoAtempiId") ?? ""),
       cantidadKits,
       observaciones: String(formData.get("observaciones") ?? ""),

@@ -4,7 +4,7 @@ import { listPrecintosEmpleados } from "@/lib/precintos-empleados";
 
 export const PRECINTOS_ACCION = "Asignacion de Kit Seguridad por parte de COLFRUTAS";
 
-export type PrecintosInput = { empleadoColfrutasId: string; empleadoAtempiId: string; cantidadKits: number; observaciones: string };
+export type PrecintosInput = { empleadoColfrutasId: string; empleadoColfrutasNombreManual?: string; empleadoColfrutasCedulaManual?: string; empleadoColfrutasCargoManual?: string; empleadoAtempiId: string; cantidadKits: number; observaciones: string };
 export type PrecintosKitInput = { numero: string; foto: File | null };
 export type PrecintosFirmasInput = { firmaEmpleadoAtempi: File | null; firmaEmpleadoColfrutas: File | null };
 
@@ -24,11 +24,18 @@ export async function createPrecintosAsignacion(
   if (kits.length !== cantidad) throw new Error("Debes completar la informacion de cada kit.");
 
   const empleados = await listPrecintosEmpleados(supabase, true);
+  const isManualColfrutas = input.empleadoColfrutasId === "manual";
   const colfrutas = empleados.find((item) => item.id === input.empleadoColfrutasId && item.empresa === "COLFRUTAS");
   const atempi = empleados.find((item) => item.id === input.empleadoAtempiId && item.empresa === "ATEMPI");
-  if (!colfrutas) throw new Error("Selecciona un empleado activo de COLFRUTAS.");
+  if (!isManualColfrutas && !colfrutas) throw new Error("Selecciona un empleado activo de COLFRUTAS.");
   if (!atempi) throw new Error("Selecciona un empleado activo de ATEMPI.");
-  if (!colfrutas.cargo) throw new Error("El empleado COLFRUTAS seleccionado no tiene cargo configurado.");
+  const colfrutasNombre = isManualColfrutas ? input.empleadoColfrutasNombreManual ?? "" : colfrutas!.nombre;
+  const colfrutasCedula = isManualColfrutas ? input.empleadoColfrutasCedulaManual ?? "" : colfrutas!.cedula;
+  const colfrutasCargo = isManualColfrutas ? input.empleadoColfrutasCargoManual ?? "" : colfrutas!.cargo ?? "";
+  validateRequiredText(colfrutasNombre, "El nombre del empleado COLFRUTAS");
+  validateRequiredText(colfrutasCedula, "La cedula del empleado COLFRUTAS");
+  validateRequiredText(colfrutasCargo, "El cargo del empleado COLFRUTAS");
+  if (!colfrutasCargo) throw new Error("El empleado COLFRUTAS seleccionado no tiene cargo configurado.");
   validateImageFile(firmas.firmaEmpleadoAtempi, "Firma del empleado ATEMPI que entrega");
   validateImageFile(firmas.firmaEmpleadoColfrutas, "Firma del empleado COLFRUTAS que recibe");
 
@@ -72,10 +79,10 @@ export async function createPrecintosAsignacion(
     fecha: dateFormatter.format(now),
     hora: timeFormatter.format(now),
     accion: action,
-    empleado_colfrutas_id: colfrutas.id,
-    empleado_colfrutas_nombre: colfrutas.nombre,
-    empleado_colfrutas_cedula: colfrutas.cedula,
-    empleado_colfrutas_cargo: colfrutas.cargo,
+    empleado_colfrutas_id: colfrutas?.id ?? null,
+    empleado_colfrutas_nombre: colfrutasNombre.trim(),
+    empleado_colfrutas_cedula: colfrutasCedula.trim(),
+    empleado_colfrutas_cargo: colfrutasCargo.trim(),
     empleado_atempi_id: atempi.id,
     empleado_atempi_nombre: atempi.nombre,
     empleado_atempi_cedula: atempi.cedula,

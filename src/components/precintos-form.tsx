@@ -11,6 +11,7 @@ import { SALIDA_PRECINTOS_ACCION } from "@/lib/salida-precintos";
 type KitState = { numero: string; foto: File | null };
 const emptyKit = (): KitState => ({ numero: "", foto: null });
 const photoQuantityOptions = Array.from({ length: 10 }, (_, index) => String(index + 1));
+const MANUAL_COLFRUTAS_ID = "manual";
 
 export function PrecintosForm({ mode = "entrada" }: { mode?: "entrada" | "salida" }) {
   const isSalida = mode === "salida";
@@ -18,6 +19,9 @@ export function PrecintosForm({ mode = "entrada" }: { mode?: "entrada" | "salida
   const action = isSalida ? SALIDA_PRECINTOS_ACCION : PRECINTOS_ACCION;
   const [empleados, setEmpleados] = useState<PrecintosEmpleado[]>([]);
   const [colfrutasId, setColfrutasId] = useState("");
+  const [colfrutasManualNombre, setColfrutasManualNombre] = useState("");
+  const [colfrutasManualCedula, setColfrutasManualCedula] = useState("");
+  const [colfrutasManualCargo, setColfrutasManualCargo] = useState("");
   const [atempiId, setAtempiId] = useState("");
   const [cantidad, setCantidad] = useState(1);
   const [kits, setKits] = useState<KitState[]>([emptyKit()]);
@@ -62,6 +66,9 @@ export function PrecintosForm({ mode = "entrada" }: { mode?: "entrada" | "salida
       try {
         const payload = new FormData();
         payload.set("empleadoColfrutasId", colfrutasId);
+        payload.set("empleadoColfrutasNombreManual", colfrutasManualNombre);
+        payload.set("empleadoColfrutasCedulaManual", colfrutasManualCedula);
+        payload.set("empleadoColfrutasCargoManual", colfrutasManualCargo);
         payload.set("empleadoAtempiId", atempiId);
         payload.set("cantidadKits", String(cantidad));
         payload.set("observaciones", observaciones);
@@ -76,6 +83,9 @@ export function PrecintosForm({ mode = "entrada" }: { mode?: "entrada" | "salida
         if (!response.ok) throw new Error(result.error || "No fue posible guardar la asignacion.");
         setMessage(`${isSalida ? "Salida" : "Entrada"} de precinto guardada correctamente.`);
         setColfrutasId("");
+        setColfrutasManualNombre("");
+        setColfrutasManualCedula("");
+        setColfrutasManualCargo("");
         setAtempiId("");
         setCantidad(1);
         setKits([emptyKit()]);
@@ -116,12 +126,19 @@ export function PrecintosForm({ mode = "entrada" }: { mode?: "entrada" | "salida
 
           <SectionTitle eyebrow="Participantes" title="Entrega y custodia" tone="sky" />
           <div className="grid gap-4 md:grid-cols-2">
-            <SelectField label="Nombre empleado COLFRUTAS" value={colfrutasId} onChange={setColfrutasId} options={colfrutas.map((item) => ({ value: item.id, label: item.nombre }))} required tone="sky" />
+            <SelectField label="Nombre empleado COLFRUTAS" value={colfrutasId} onChange={setColfrutasId} options={[...colfrutas.map((item) => ({ value: item.id, label: item.nombre })), { value: MANUAL_COLFRUTAS_ID, label: "No esta en la lista / escribir manualmente" }]} required tone="sky" />
             <SelectField label="Nombre empleado ATEMPI" value={atempiId} onChange={setAtempiId} options={atempi.map((item) => ({ value: item.id, label: item.nombre }))} required tone="sky" />
           </div>
+          {colfrutasId === MANUAL_COLFRUTAS_ID ? (
+            <div className="grid gap-4 md:grid-cols-3">
+              <InputField label="Nombre empleado COLFRUTAS" value={colfrutasManualNombre} onChange={setColfrutasManualNombre} required />
+              <InputField label="Cedula empleado COLFRUTAS" value={colfrutasManualCedula} onChange={setColfrutasManualCedula} required />
+              <InputField label="Cargo empleado COLFRUTAS" value={colfrutasManualCargo} onChange={setColfrutasManualCargo} required />
+            </div>
+          ) : null}
           <div className="grid gap-4 md:grid-cols-3">
-            <InputField label="Cedula empleado COLFRUTAS" value={selectedColfrutas?.cedula ?? ""} onChange={() => undefined} disabled />
-            <InputField label="Cargo empleado COLFRUTAS" value={selectedColfrutas?.cargo ?? ""} onChange={() => undefined} disabled />
+            {colfrutasId !== MANUAL_COLFRUTAS_ID ? <InputField label="Cedula empleado COLFRUTAS" value={selectedColfrutas?.cedula ?? ""} onChange={() => undefined} disabled /> : null}
+            {colfrutasId !== MANUAL_COLFRUTAS_ID ? <InputField label="Cargo empleado COLFRUTAS" value={selectedColfrutas?.cargo ?? ""} onChange={() => undefined} disabled /> : null}
             <InputField label="Cedula empleado ATEMPI" value={selectedAtempi?.cedula ?? ""} onChange={() => undefined} disabled />
           </div>
 

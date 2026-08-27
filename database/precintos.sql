@@ -17,7 +17,7 @@ create table if not exists public.precintos_asignaciones (
   fecha date not null default current_date,
   hora time not null default localtime,
   accion text not null default 'Asignacion de Kit Seguridad por parte de COLFRUTAS',
-  empleado_colfrutas_id uuid not null references public.precintos_empleados(id),
+  empleado_colfrutas_id uuid references public.precintos_empleados(id),
   empleado_colfrutas_nombre text not null,
   empleado_colfrutas_cedula text not null,
   empleado_colfrutas_cargo text not null,
