@@ -20,7 +20,7 @@ export async function createPrecintosAsignacion(
   const storageFolder = config.storageFolder ?? "precintos";
   const action = config.action ?? PRECINTOS_ACCION;
   const cantidad = Number(input.cantidadKits);
-  if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > 4) throw new Error("La cantidad de kits debe estar entre 1 y 4.");
+  if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > 10) throw new Error("La cantidad de fotos de kits debe estar entre 1 y 10.");
   if (kits.length !== cantidad) throw new Error("Debes completar la informacion de cada kit.");
 
   const empleados = await listPrecintosEmpleados(supabase, true);

@@ -10,6 +10,7 @@ import { SALIDA_PRECINTOS_ACCION } from "@/lib/salida-precintos";
 
 type KitState = { numero: string; foto: File | null };
 const emptyKit = (): KitState => ({ numero: "", foto: null });
+const photoQuantityOptions = Array.from({ length: 10 }, (_, index) => String(index + 1));
 
 export function PrecintosForm({ mode = "entrada" }: { mode?: "entrada" | "salida" }) {
   const isSalida = mode === "salida";
@@ -125,7 +126,7 @@ export function PrecintosForm({ mode = "entrada" }: { mode?: "entrada" | "salida
           </div>
 
           <SectionTitle eyebrow="Kits de seguridad" title="Numeros y fotografias" tone="sky" />
-          <SelectField label="Cantidad de kits de seguridad" value={String(cantidad)} onChange={changeCantidad} options={["1", "2", "3", "4"]} required tone="sky" />
+          <SelectField label="Cantidad de fotos de kits de seguridad" value={String(cantidad)} onChange={changeCantidad} options={photoQuantityOptions} required tone="sky" />
           <div className="grid gap-5 md:grid-cols-2">
             {kits.map((kit, index) => (
               <section key={index} className="space-y-4 rounded-3xl border border-emerald-100 bg-emerald-50/50 p-5">

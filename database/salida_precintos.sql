@@ -16,7 +16,7 @@ create table if not exists public.precintos_salidas (
   empleado_atempi_id uuid references public.precintos_empleados(id),
   empleado_atempi_nombre text,
   empleado_atempi_cedula text,
-  cantidad_kits smallint check (cantidad_kits between 1 and 4),
+  cantidad_kits smallint check (cantidad_kits between 1 and 10),
   kits jsonb,
   observaciones text,
   firma_empleado_atempi_url text,
