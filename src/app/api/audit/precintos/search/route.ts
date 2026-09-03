@@ -19,7 +19,15 @@ export async function POST(request: Request) {
 
 async function signRecord(supabase: NonNullable<Awaited<ReturnType<typeof getAuthorizedServerClient>>["supabase"]>, record: AuditPrecintoRecord) {
   const signed = { ...record, kits: Array.isArray(record.kits) ? await Promise.all(record.kits.map(async (kit) => ({ ...kit, foto_url: await createSignedEvidenceUrl(supabase, kit.foto_url) }))) : [] };
+  if (record.tipo === "trazabilidad") {
+    signed.entrada = record.entrada ? await signMovement(supabase, record.entrada) : null;
+    signed.salida = record.salida ? await signMovement(supabase, record.salida) : null;
+  }
   if (record.firma_empleado_atempi_url) signed.firma_empleado_atempi_url = await createSignedEvidenceUrl(supabase, record.firma_empleado_atempi_url);
   if (record.firma_empleado_colfrutas_url) signed.firma_empleado_colfrutas_url = await createSignedEvidenceUrl(supabase, record.firma_empleado_colfrutas_url);
   return signed;
+}
+
+async function signMovement(supabase: NonNullable<Awaited<ReturnType<typeof getAuthorizedServerClient>>["supabase"]>, movement: NonNullable<AuditPrecintoRecord["entrada"]>) {
+  return { ...movement, foto_url: await createSignedEvidenceUrl(supabase, movement.foto_url), firma_uno_url: await createSignedEvidenceUrl(supabase, movement.firma_uno_url), firma_dos_url: await createSignedEvidenceUrl(supabase, movement.firma_dos_url) };
 }

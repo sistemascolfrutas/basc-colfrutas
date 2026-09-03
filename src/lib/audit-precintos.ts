@@ -1,7 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type AuditPrecintoType = "entrada" | "salida";
+export type AuditPrecintoType = "entrada" | "salida" | "trazabilidad";
 export type AuditPrecintoKit = { numero: string; foto_url: string };
+export type AuditMovimientoKit = {
+  created_at: string; foto_url: string; observaciones: string | null;
+  persona_uno_nombre: string; persona_uno_cedula: string; persona_dos_nombre: string; persona_dos_cedula: string;
+  firma_uno_url: string; firma_dos_url: string;
+};
 export type AuditPrecintoRecord = {
   id: string;
   tipo: AuditPrecintoType;
@@ -21,6 +26,8 @@ export type AuditPrecintoRecord = {
   hora_final: string;
   firma_empleado_colfrutas_url: string;
   created_at: string;
+  entrada?: AuditMovimientoKit | null;
+  salida?: AuditMovimientoKit | null;
 };
 
 export type AuditPrecintoFilters = {
@@ -59,42 +66,46 @@ export async function searchAuditPrecintos(
     .slice(0, 100);
 }
 
-async function searchNewTraceability(supabase: SupabaseClient, tipo: AuditPrecintoType | "todos") {
-  const requests: Array<Promise<AuditPrecintoRecord[]>> = [];
-  if (tipo !== "salida") requests.push(readNewMovements(supabase, "precintos_recepciones", "entrada"));
-  if (tipo !== "entrada") requests.push(readNewMovements(supabase, "precintos_despachos", "salida"));
-  return (await Promise.all(requests)).flat();
-}
-
-async function readNewMovements(supabase: SupabaseClient, table: "precintos_recepciones" | "precintos_despachos", tipo: AuditPrecintoType) {
-  const { data, error } = await supabase.from(table)
-    .select("*, precintos_embarques!inner(numero_embarque, numero_kit)")
+async function searchNewTraceability(supabase: SupabaseClient, tipo: "entrada" | "salida" | "todos") {
+  const { data, error } = await supabase.from("precintos_embarques")
+    .select("*, precintos_recepciones(*), precintos_despachos(*)")
     .order("created_at", { ascending: false }).limit(100).returns<Array<Record<string, unknown>>>();
   if (error) throw new Error(`No fue posible consultar la trazabilidad nueva de precintos: ${error.message}`);
-  return (data ?? []).map((row) => mapNewMovement(row, tipo));
+  return (data ?? []).map(mapNewTraceability).filter((record) =>
+    tipo === "todos" || (tipo === "entrada" ? Boolean(record.entrada) : Boolean(record.salida))
+  );
 }
 
-function mapNewMovement(row: Record<string, unknown>, tipo: AuditPrecintoType): AuditPrecintoRecord {
-  const embarque = row.precintos_embarques as { numero_embarque?: string; numero_kit?: string } | null;
+function mapNewTraceability(row: Record<string, unknown>): AuditPrecintoRecord {
   const createdAt = String(row.created_at ?? "");
   const { fecha, hora } = bogotaDateTime(createdAt);
-  const entrada = tipo === "entrada";
+  const reception = relation(row.precintos_recepciones);
+  const dispatch = relation(row.precintos_despachos);
+  const entrada = reception ? mapMovement(reception, true) : null;
+  const salida = dispatch ? mapMovement(dispatch, false) : null;
   return {
-    id: String(row.id), tipo, numero_embarque: embarque?.numero_embarque ?? "",
+    id: String(row.id), tipo: "trazabilidad", numero_embarque: String(row.numero_embarque ?? ""),
     fecha, hora, hora_final: hora,
-    accion: entrada ? "Recepción del kit en Portería" : "Salida del kit hacia Logística",
-    empleado_colfrutas_nombre: String(entrada ? row.auxiliar_nombre : row.logistica_nombre),
-    empleado_colfrutas_cedula: String(entrada ? row.auxiliar_cedula : row.logistica_cedula),
-    empleado_colfrutas_cargo: entrada ? "Auxiliar de Comercio" : "Logística",
-    empleado_atempi_nombre: String(row.porteria_nombre ?? ""),
-    empleado_atempi_cedula: String(row.porteria_cedula ?? ""),
+    accion: "Trazabilidad completa del embarque",
+    empleado_colfrutas_nombre: entrada?.persona_uno_nombre ?? salida?.persona_dos_nombre ?? "Pendiente",
+    empleado_colfrutas_cedula: entrada?.persona_uno_cedula ?? salida?.persona_dos_cedula ?? "",
+    empleado_colfrutas_cargo: "Auxiliar de Comercio / Logística",
+    empleado_atempi_nombre: entrada?.persona_dos_nombre ?? salida?.persona_uno_nombre ?? "Pendiente",
+    empleado_atempi_cedula: entrada?.persona_dos_cedula ?? salida?.persona_uno_cedula ?? "",
     cantidad_kits: 1,
-    kits: [{ numero: embarque?.numero_kit ?? "", foto_url: String(row.foto_url ?? "") }],
+    kits: [{ numero: String(row.numero_kit ?? ""), foto_url: entrada?.foto_url ?? salida?.foto_url ?? "" }],
     observaciones: row.observaciones ? String(row.observaciones) : null,
-    firma_empleado_atempi_url: String(entrada ? row.firma_porteria_url : row.firma_porteria_url),
-    firma_empleado_colfrutas_url: String(entrada ? row.firma_auxiliar_url : row.firma_logistica_url),
-    created_at: createdAt,
+    firma_empleado_atempi_url: "", firma_empleado_colfrutas_url: "", created_at: createdAt,
+    entrada, salida,
   };
+}
+
+function relation(value: unknown) { return (Array.isArray(value) ? value[0] : value) as Record<string, unknown> | null | undefined; }
+function mapMovement(row: Record<string, unknown>, entrada: boolean): AuditMovimientoKit {
+  return { created_at: String(row.created_at ?? ""), foto_url: String(row.foto_url ?? ""), observaciones: row.observaciones ? String(row.observaciones) : null,
+    persona_uno_nombre: String(entrada ? row.auxiliar_nombre : row.porteria_nombre), persona_uno_cedula: String(entrada ? row.auxiliar_cedula : row.porteria_cedula),
+    persona_dos_nombre: String(entrada ? row.porteria_nombre : row.logistica_nombre), persona_dos_cedula: String(entrada ? row.porteria_cedula : row.logistica_cedula),
+    firma_uno_url: String(entrada ? row.firma_auxiliar_url : row.firma_porteria_url), firma_dos_url: String(entrada ? row.firma_porteria_url : row.firma_logistica_url) };
 }
 
 function bogotaDateTime(value: string) {
