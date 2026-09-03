@@ -5,8 +5,8 @@ export type EstadoEmbarque = "PENDIENTE_RECEPCION" | "DISPONIBLE_PORTERIA" | "DE
 export type EmbarqueKit = {
   id: string; numero_embarque: string; numero_kit: string; estado: EstadoEmbarque;
   observaciones: string | null; created_at: string; updated_at: string;
-  precintos_recepciones?: { created_at: string }[];
-  precintos_despachos?: { created_at: string }[];
+  precintos_recepciones?: { created_at: string } | { created_at: string }[] | null;
+  precintos_despachos?: { created_at: string } | { created_at: string }[] | null;
 };
 
 export async function listEmbarques(supabase: SupabaseClient, estado?: EstadoEmbarque) {
