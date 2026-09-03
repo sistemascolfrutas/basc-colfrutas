@@ -5,10 +5,12 @@ export type EstadoEmbarque = "PENDIENTE_RECEPCION" | "DISPONIBLE_PORTERIA" | "DE
 export type EmbarqueKit = {
   id: string; numero_embarque: string; numero_kit: string; estado: EstadoEmbarque;
   observaciones: string | null; created_at: string; updated_at: string;
+  precintos_recepciones?: { created_at: string }[];
+  precintos_despachos?: { created_at: string }[];
 };
 
 export async function listEmbarques(supabase: SupabaseClient, estado?: EstadoEmbarque) {
-  let query = supabase.from("precintos_embarques").select("*").order("created_at", { ascending: false }).limit(200);
+  let query = supabase.from("precintos_embarques").select("*, precintos_recepciones(created_at), precintos_despachos(created_at)").order("created_at", { ascending: false }).limit(200);
   if (estado) query = query.eq("estado", estado);
   const { data, error } = await query.returns<EmbarqueKit[]>();
   if (error) throw new Error(`No fue posible consultar los embarques: ${error.message}`);
