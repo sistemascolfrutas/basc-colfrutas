@@ -2,7 +2,7 @@ import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 import { normalizeEmail } from "@/lib/auth";
 
-export const APP_ROLES = ["admin", "porteria", "logistica"] as const;
+export const APP_ROLES = ["admin", "comercio", "porteria", "logistica"] as const;
 export type AppRole = (typeof APP_ROLES)[number];
 
 export const FORM_PERMISSIONS = ["fsu01", "fsu02", "fsu03", "fsu04"] as const;
@@ -10,6 +10,7 @@ export type FormPermission = (typeof FORM_PERMISSIONS)[number];
 
 export const APP_PERMISSIONS = [
   ...FORM_PERMISSIONS,
+  "embarques",
   "precintos",
   "salida_precintos",
   "audit",
@@ -19,6 +20,7 @@ export type AppPermission = (typeof APP_PERMISSIONS)[number];
 
 export const USER_ASSIGNABLE_PERMISSIONS = [
   ...FORM_PERMISSIONS,
+  "embarques",
   "precintos",
   "salida_precintos",
   "audit",
@@ -26,6 +28,7 @@ export const USER_ASSIGNABLE_PERMISSIONS = [
 
 export const ROLE_LABELS: Record<AppRole, string> = {
   admin: "Administrador",
+  comercio: "Auxiliar de Comercio",
   porteria: "Porteria",
   logistica: "Logistica",
 };
@@ -35,14 +38,16 @@ export const PERMISSION_LABELS: Record<AppPermission, string> = {
   fsu02: "F-SU-02",
   fsu03: "F-SU-03",
   fsu04: "F-SU-04",
-  precintos: "Entrada de precinto",
-  salida_precintos: "Salida de precinto",
+  embarques: "Creación de embarques",
+  precintos: "Entrega de kits en portería",
+  salida_precintos: "Salida de kits",
   audit: "Auditoria",
   user_admin: "Gestion de usuarios",
 };
 
 const DEFAULT_FORM_PERMISSIONS_BY_ROLE: Record<AppRole, FormPermission[]> = {
   admin: [...FORM_PERMISSIONS],
+  comercio: [],
   porteria: ["fsu01", "fsu02"],
   logistica: ["fsu03", "fsu04"],
 };
@@ -100,6 +105,7 @@ export function getDefaultPermissionsForRole(role: AppRole) {
     return [...APP_PERMISSIONS];
   }
 
+  if (role === "comercio") return ["embarques"];
   return [...DEFAULT_FORM_PERMISSIONS_BY_ROLE[role]];
 }
 

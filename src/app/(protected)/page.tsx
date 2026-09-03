@@ -29,15 +29,21 @@ const actions = [
     permission: "fsu04" as const,
   },
   {
+    href: "/embarques",
+    title: "Embarques y kits",
+    description: "Crear el embarque y asignarle un único kit cerrado.",
+    permission: "embarques" as const,
+  },
+  {
     href: "/precintos",
-    title: "ENTRADA DE PRECINTO",
-    description: "Registrar la entrada y recepcion de kits de seguridad entregados por ATEMPI a COLFRUTAS.",
+    title: "Entrega en Portería",
+    description: "Recibir el kit asignado al embarque, tomar la foto y registrar las firmas.",
     permission: "precintos" as const,
   },
   {
     href: "/salida-precintos",
-    title: "SALIDA DE PRECINTO",
-    description: "Registrar la salida de kits de seguridad de ATEMPI para custodia de COLFRUTAS Paletizado.",
+    title: "Salida de kits",
+    description: "Entregar a Logística el kit recibido previamente y registrar la evidencia final.",
     permission: "salida_precintos" as const,
   },
   {

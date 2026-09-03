@@ -5,7 +5,7 @@ create table if not exists public.app_users (
   auth_user_id uuid unique,
   email text not null unique,
   full_name text,
-  role text not null check (role in ('admin', 'porteria', 'logistica')),
+  role text not null check (role in ('admin', 'comercio', 'porteria', 'logistica')),
   permissions text[] not null default '{}',
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
