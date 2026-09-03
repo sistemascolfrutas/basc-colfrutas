@@ -10,6 +10,7 @@ const navItems = [
   { href: "/fsu-01", label: "F-SU-01", permission: "fsu01" as const },
   { href: "/fsu-02", label: "F-SU-02", permission: "fsu02" as const },
   { href: "/fsu-03", label: "F-SU-03", permission: "fsu03" as const },
+  { href: "/supervision-sellado", label: "SUPERVISIÓN DE SELLADO", permission: "supervision_sellado" as const },
   { href: "/fsu-04", label: "F-SU-04", permission: "fsu04" as const },
   { href: "/embarques", label: "EMBARQUES Y KITS", permission: "embarques" as const },
   { href: "/precintos", label: "ENTREGA EN PORTERÍA", permission: "precintos" as const },
@@ -28,6 +29,11 @@ const navItems = [
   {
     href: "/admin/empleados-precintos",
     label: "Personas precintos",
+    permission: "user_admin" as const,
+  },
+  {
+    href: "/admin/cierre-salidas",
+    label: "Cerrar salidas",
     permission: "user_admin" as const,
   },
 ];

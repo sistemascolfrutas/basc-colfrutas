@@ -35,6 +35,7 @@ const FORM_TITLES = {
   "F-SU-01": "Ingreso de unidad",
   "F-SU-02": "Inspeccion fisica e inocuidad",
   "F-SU-03": "Cargue y aseguramiento",
+  "SELLADO": "Supervisión de sellado",
   "F-SU-04": "Salida de unidad",
 } as const;
 const TIPO_OPERACION_CONTINUA_FLUJO = "Transporte de acopio a puerto";
@@ -582,6 +583,11 @@ function getApplicableForms(detail: AuditDetail): ApplicableForm[] {
       record: detail.fsu03,
       state: detail.operacion.estado_cargue,
     },
+    {
+      code: "SELLADO",
+      record: detail.supervision,
+      state: detail.operacion.estado_sellado ?? "pendiente",
+    },
     directForms[1],
   ];
 }
@@ -722,6 +728,9 @@ function formatLabel(key: string) {
     se_detecto_novedad: "Se detecto novedad",
     descripcion_novedad: "Descripcion de la novedad",
     observaciones: "Observaciones",
+    cierre_administrativo: "Cierre administrativo",
+    cerrado_por: "Administrador responsable",
+    cerrado_en: "Fecha y hora del cierre administrativo",
     se_realizo_cargue: "Se realizo cargue",
     observaciones_cargue: "Observaciones del cargue",
     puertas_cerradas_sellos_instalados: "Puertas cerradas y sellos instalados",

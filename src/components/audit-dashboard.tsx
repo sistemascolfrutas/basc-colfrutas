@@ -484,6 +484,7 @@ function collectEvidencias(detail: AuditDetail) {
     ...mapEvidenceGroup("F-SU-01", detail.fsu01),
     ...mapEvidenceGroup("F-SU-02", detail.fsu02),
     ...mapEvidenceGroup("F-SU-03", detail.fsu03),
+    ...mapEvidenceGroup("SELLADO", detail.supervision),
     ...mapEvidenceGroup("F-SU-04", detail.fsu04),
   ];
 }
@@ -527,6 +528,7 @@ function FormTabs({
     { key: "F-SU-01", title: "Ingreso", record: detail.fsu01 },
     { key: "F-SU-02", title: "Inspeccion", record: detail.fsu02 },
     { key: "F-SU-03", title: "Cargue", record: detail.fsu03 },
+    { key: "SELLADO", title: "Supervisión de sellado", record: detail.supervision },
     { key: "F-SU-04", title: "Salida", record: detail.fsu04 },
   ];
   const current = forms.find((form) => form.key === activeForm) ?? forms[0];

@@ -15,6 +15,7 @@ type OperacionMaestraRecord = {
   estado_inspeccion: string;
   estado_cargue: string;
   estado_salida: string;
+  estado_sellado?: string;
   ruta_evidencias_folder: string | null;
   tipo_operacion?: string;
 };
@@ -237,6 +238,15 @@ export async function requireOperacionSalidaWithClient(
       );
     }
 
+    const { data: supervision, error: supervisionError } = await supabase
+      .from("supervisiones_sellado")
+      .select("id,estado")
+      .eq("nombre_operacion", nombreOperacion)
+      .eq("estado", "completo")
+      .maybeSingle<{ id: string; estado: string }>();
+    if (supervisionError) throw new Error(`No fue posible validar la supervisión de sellado: ${supervisionError.message}`);
+    if (!supervision) throw new Error("Debes completar la Supervisión de sellado antes de registrar F-SU-04.");
+
     await syncOperacionStatusWithClient(supabase, nombreOperacion, {
       estado_ingreso: "completo",
       estado_inspeccion: "completo",
@@ -411,7 +421,7 @@ async function getPendingFromRecordsWithClient(
 }
 
 async function getPendingSalidaOperacionesWithClient(supabase: SupabaseClient) {
-  const [ingresosRes, carguesRes, salidasRes] = await Promise.all([
+  const [ingresosRes, carguesRes, salidasRes, supervisionesRes] = await Promise.all([
     supabase
       .from("reg_fsu01_ingreso")
       .select("nombre_operacion,tipo_operacion")
@@ -427,6 +437,11 @@ async function getPendingSalidaOperacionesWithClient(supabase: SupabaseClient) {
     supabase
       .from("reg_fsu04_salida")
       .select("nombre_operacion")
+      .returns<Array<{ nombre_operacion: string }>>(),
+    supabase
+      .from("supervisiones_sellado")
+      .select("nombre_operacion")
+      .eq("estado", "completo")
       .returns<Array<{ nombre_operacion: string }>>(),
   ]);
 
@@ -448,15 +463,20 @@ async function getPendingSalidaOperacionesWithClient(supabase: SupabaseClient) {
     );
   }
 
+  if (supervisionesRes.error) {
+    throw new Error(`No fue posible consultar supervisiones de sellado: ${supervisionesRes.error.message}`);
+  }
+
   const completedNames = new Set(
     (salidasRes.data ?? []).map((record) => record.nombre_operacion),
   );
   const directSalidaNames = (ingresosRes.data ?? [])
     .filter((record) => record.tipo_operacion !== TIPO_OPERACION_CONTINUA_FLUJO)
     .map((record) => record.nombre_operacion);
-  const fullFlowSalidaNames = (carguesRes.data ?? []).map(
-    (record) => record.nombre_operacion,
-  );
+  const carguesCompletos = new Set((carguesRes.data ?? []).map((record) => record.nombre_operacion));
+  const fullFlowSalidaNames = (supervisionesRes.data ?? [])
+    .map((record) => record.nombre_operacion)
+    .filter((name) => carguesCompletos.has(name));
   const pendingNames = Array.from(
     new Set([...directSalidaNames, ...fullFlowSalidaNames]),
   ).filter((name) => !completedNames.has(name));

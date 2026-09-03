@@ -23,6 +23,12 @@ const actions = [
     permission: "fsu03" as const,
   },
   {
+    href: "/supervision-sellado",
+    title: "Supervisión de sellado",
+    description: "Registrar sellados temporales y el sellado definitivo antes de la salida.",
+    permission: "supervision_sellado" as const,
+  },
+  {
     href: "/fsu-04",
     title: "F-SU-04 Salida",
     description: "Registrar fecha, hora, sellos y evidencia final de salida.",
@@ -68,6 +74,12 @@ const actions = [
     href: "/admin/empleados-precintos",
     title: "Personas precintos",
     description: "Administrar empleados de COLFRUTAS y ATEMPI disponibles en el formulario de entrada de precinto.",
+    permission: "user_admin" as const,
+  },
+  {
+    href: "/admin/cierre-salidas",
+    title: "Cerrar salidas pendientes",
+    description: "Cerrar administrativamente operaciones cuyo F-SU-04 no fue diligenciado.",
     permission: "user_admin" as const,
   },
 ];

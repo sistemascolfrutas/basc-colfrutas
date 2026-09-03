@@ -13,6 +13,7 @@ export const APP_PERMISSIONS = [
   "embarques",
   "precintos",
   "salida_precintos",
+  "supervision_sellado",
   "audit",
   "user_admin",
 ] as const;
@@ -23,6 +24,7 @@ export const USER_ASSIGNABLE_PERMISSIONS = [
   "embarques",
   "precintos",
   "salida_precintos",
+  "supervision_sellado",
   "audit",
 ] as const satisfies readonly AppPermission[];
 
@@ -41,6 +43,7 @@ export const PERMISSION_LABELS: Record<AppPermission, string> = {
   embarques: "Creación de embarques",
   precintos: "Entrega de kits en portería",
   salida_precintos: "Salida de kits",
+  supervision_sellado: "Supervisión de sellado",
   audit: "Auditoria",
   user_admin: "Gestion de usuarios",
 };

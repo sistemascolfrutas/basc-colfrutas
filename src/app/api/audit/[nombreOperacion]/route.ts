@@ -42,6 +42,7 @@ export async function GET(
       fsu01: await signEvidenceUrlsInRecord(supabase, detail.fsu01),
       fsu02: await signEvidenceUrlsInRecord(supabase, detail.fsu02),
       fsu03: await signEvidenceUrlsInRecord(supabase, detail.fsu03),
+      supervision: await signEvidenceUrlsInRecord(supabase, detail.supervision),
       fsu04: await signEvidenceUrlsInRecord(supabase, detail.fsu04),
     });
   } catch (error) {

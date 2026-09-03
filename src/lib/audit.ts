@@ -14,6 +14,7 @@ export type OperacionMaestraAudit = {
   estado_inspeccion: string;
   estado_cargue: string;
   estado_salida: string;
+  estado_sellado?: string;
   ruta_evidencias_folder: string | null;
   created_at?: string;
 };
@@ -23,11 +24,12 @@ export type AuditDetail = {
   fsu01: Record<string, unknown> | null;
   fsu02: Record<string, unknown> | null;
   fsu03: Record<string, unknown> | null;
+  supervision: Record<string, unknown> | null;
   fsu04: Record<string, unknown> | null;
 };
 
 export type AuditEvidence = {
-  group: "F-SU-01" | "F-SU-02" | "F-SU-03" | "F-SU-04";
+  group: "F-SU-01" | "F-SU-02" | "F-SU-03" | "SELLADO" | "F-SU-04";
   key: string;
   label: string;
   url: string;
@@ -110,7 +112,7 @@ export async function getOperacionAuditDetailWithClient(
   supabase: SupabaseClient,
   nombreOperacion: string,
 ) {
-  const [operacionRes, fsu01Res, fsu02Res, fsu03Res, fsu04Res] = await Promise.all([
+  const [operacionRes, fsu01Res, fsu02Res, fsu03Res, supervisionRes, fsu04Res] = await Promise.all([
     supabase
       .from("operaciones_maestra")
       .select("*")
@@ -129,6 +131,11 @@ export async function getOperacionAuditDetailWithClient(
     supabase
       .from("reg_fsu03_cargue_aseguramiento")
       .select("*")
+      .eq("nombre_operacion", nombreOperacion)
+      .maybeSingle<Record<string, unknown>>(),
+    supabase
+      .from("supervisiones_sellado")
+      .select("*, supervision_sellado_eventos(*)")
       .eq("nombre_operacion", nombreOperacion)
       .maybeSingle<Record<string, unknown>>(),
     supabase
@@ -160,6 +167,10 @@ export async function getOperacionAuditDetailWithClient(
     throw new Error(`Error cargando F-SU-03: ${fsu03Res.error.message}`);
   }
 
+  if (supervisionRes.error) {
+    throw new Error(`Error cargando Supervisión de sellado: ${supervisionRes.error.message}`);
+  }
+
   if (fsu04Res.error) {
     throw new Error(`Error cargando F-SU-04: ${fsu04Res.error.message}`);
   }
@@ -169,6 +180,19 @@ export async function getOperacionAuditDetailWithClient(
     fsu01: fsu01Res.data,
     fsu02: fsu02Res.data,
     fsu03: fsu03Res.data,
+    supervision: flattenSupervision(supervisionRes.data),
     fsu04: fsu04Res.data,
   } satisfies AuditDetail;
+}
+
+function flattenSupervision(record: Record<string, unknown> | null) {
+  if (!record) return null;
+  const events = Array.isArray(record.supervision_sellado_eventos) ? record.supervision_sellado_eventos as Array<Record<string, unknown>> : [];
+  const flattened: Record<string, unknown> = { ...record };
+  delete flattened.supervision_sellado_eventos;
+  events.sort((a,b)=>String(a.created_at).localeCompare(String(b.created_at))).forEach((event,index)=>{
+    const prefix=`evento_${index+1}`; flattened[`${prefix}_tipo`]=event.tipo_evento; flattened[`${prefix}_fecha`]=event.created_at; flattened[`${prefix}_instalador`]=`${event.instalador_nombre} · ${event.instalador_cedula}`; flattened[`${prefix}_supervisor`]=`${event.supervisor_nombre} · ${event.supervisor_cedula}`; flattened[`${prefix}_observaciones`]=event.observaciones; flattened[`${prefix}_firma_instalador_url`]=event.firma_instalador_url; flattened[`${prefix}_firma_supervisor_url`]=event.firma_supervisor_url;
+    const seals=Array.isArray(event.precintos)?event.precintos as Array<Record<string,unknown>>:[]; seals.forEach((seal,sealIndex)=>{const sealPrefix=`${prefix}_precinto_${sealIndex+1}`; flattened[`${sealPrefix}_tipo`]=seal.tipo; flattened[`${sealPrefix}_numero`]=seal.numero; flattened[`${sealPrefix}_foto_url`]=seal.foto_url;});
+  });
+  return flattened;
 }
