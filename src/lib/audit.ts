@@ -15,6 +15,7 @@ export type OperacionMaestraAudit = {
   estado_cargue: string;
   estado_salida: string;
   estado_sellado?: string;
+  requiere_sellado?: boolean;
   ruta_evidencias_folder: string | null;
   created_at?: string;
 };

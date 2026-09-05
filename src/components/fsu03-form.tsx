@@ -52,6 +52,7 @@ export function Fsu03Form() {
   const [isDraftReady, setIsDraftReady] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [pendingRefresh, setPendingRefresh] = useState(0);
   const [savedRecord, setSavedRecord] = useState<Record<string, unknown> | null>(
     null,
   );
@@ -183,6 +184,7 @@ export function Fsu03Form() {
       try {
         const data = await submitFsu03(form, files);
         setSavedRecord(data);
+        setPendingRefresh((value) => value + 1);
         setMessage(
           "F-SU-03 guardado correctamente. La operacion maestra quedo actualizada.",
         );
@@ -237,6 +239,7 @@ export function Fsu03Form() {
         </header>
 
         <PendingOperationPicker
+          refreshKey={pendingRefresh}
           form="fsu03"
           label="Seleccionar placa pendiente de F-SU-03"
           onSelect={(operacion) =>

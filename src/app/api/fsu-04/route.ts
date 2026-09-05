@@ -4,18 +4,9 @@ import {
   createFsu04SalidaWithClient,
   type EvidenciasFsu04Input,
   type Fsu04Input,
-  getOperationDateFromDateTime,
 } from "@/lib/fsu04";
-import {
-  buildSalidaStatusPatch,
-  requireOperacionSalidaWithClient,
-  syncOperacionStatusWithClient,
-} from "@/lib/operaciones-maestra";
-import { buildNombreOperacion, normalizePlate } from "@/lib/operations";
 import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
 import { getAuthorizedServerClient } from "@/lib/server-auth";
-import { createAdminClient } from "@/lib/supabase/admin";
-
 export async function POST(request: Request) {
   const rateLimit = consumeRateLimit(`api:fsu04:${getClientIp(request.headers)}`, {
     limit: 20,
@@ -57,24 +48,6 @@ export async function POST(request: Request) {
     };
 
     const data = await createFsu04SalidaWithClient(supabase, input, evidencias);
-    const adminClient = createAdminClient();
-    const nombreOperacion =
-      input.nombreOperacion?.trim() ||
-      buildNombreOperacion(
-        normalizePlate(input.placaNumeroContenedor),
-        getOperationDateFromDateTime(input.fechaHoraSalida),
-      );
-    const { requiereFlujoCompleto } =
-      await requireOperacionSalidaWithClient(adminClient, {
-        placa: normalizePlate(input.placaNumeroContenedor),
-        fecha: getOperationDateFromDateTime(input.fechaHoraSalida),
-        nombreOperacion,
-      });
-    await syncOperacionStatusWithClient(
-      adminClient,
-      nombreOperacion,
-      buildSalidaStatusPatch(requiereFlujoCompleto),
-    );
     return NextResponse.json(data);
   } catch (error) {
     return NextResponse.json(

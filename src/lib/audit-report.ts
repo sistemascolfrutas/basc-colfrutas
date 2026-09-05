@@ -583,11 +583,11 @@ function getApplicableForms(detail: AuditDetail): ApplicableForm[] {
       record: detail.fsu03,
       state: detail.operacion.estado_cargue,
     },
-    {
+    ...((detail.operacion.requiere_sellado === true || detail.supervision) ? [{
       code: "SELLADO",
       record: detail.supervision,
       state: detail.operacion.estado_sellado ?? "pendiente",
-    },
+    } satisfies ApplicableForm] : []),
     directForms[1],
   ];
 }

@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { saveSingleFormRecordWithClient } from "@/lib/form-records";
+import { createSingleFormRecordWithClient } from "@/lib/form-records";
 import {
   validateImageFile,
   validateOneOf,
@@ -9,9 +9,7 @@ import {
   validateRequiredText,
 } from "@/lib/form-validation";
 import {
-  buildSalidaStatusPatch,
   requireOperacionSalidaWithClient,
-  syncOperacionStatusWithClient,
 } from "@/lib/operaciones-maestra";
 import {
   buildNombreOperacion,
@@ -94,6 +92,10 @@ export async function createFsu04SalidaWithClient(
       nombreOperacion,
     });
 
+  if (placa !== normalizePlate(operacion.placa)) {
+    throw new Error("La placa no coincide con la operación seleccionada.");
+  }
+
   if (requiereFlujoCompleto) {
     validateRequiredText(input.precintoSeguridad, "El precinto de seguridad");
     validateImageFile(evidencias.fotoPrecintoCorrea, "Precinto de correa");
@@ -102,7 +104,7 @@ export async function createFsu04SalidaWithClient(
   }
 
   const evidenciasFolder =
-    operacion.ruta_evidencias_folder ?? `evidencias/${nombreOperacion}`;
+    `${operacion.ruta_evidencias_folder ?? `evidencias/${nombreOperacion}`}/${crypto.randomUUID()}`;
 
   const uploadedUrls = await uploadFsu04Evidencias(
     supabase,
@@ -125,16 +127,12 @@ export async function createFsu04SalidaWithClient(
     ...uploadedUrls,
   };
 
-  const data = await saveSingleFormRecordWithClient(
+  const data = await createSingleFormRecordWithClient(
     supabase,
     "reg_fsu04_salida",
     payload,
   );
-  await syncOperacionStatusWithClient(
-    supabase,
-    nombreOperacion,
-    buildSalidaStatusPatch(requiereFlujoCompleto),
-  );
+  // La migración sincroniza estado_salida en la misma transacción del INSERT.
 
   return data;
 }
@@ -172,7 +170,7 @@ async function uploadFsu04Evidencias(
 
     const { error } = await supabase.storage
       .from(bucketName)
-      .upload(path, file, { upsert: true });
+      .upload(path, file, { upsert: false });
 
     if (error) {
       throw new Error(`No fue posible subir ${config.fileName}: ${error.message}`);

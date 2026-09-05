@@ -49,7 +49,7 @@ export async function GET(request: Request) {
 
   try {
     const data = await getPendingOperacionesForFormWithClient(supabase, form);
-    return NextResponse.json(data);
+    return NextResponse.json(data, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "No fue posible consultar." },

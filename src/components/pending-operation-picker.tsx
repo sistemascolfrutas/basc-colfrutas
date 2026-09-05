@@ -10,12 +10,14 @@ import type {
 type PendingOperationPickerProps = {
   form: PendingOperacionForm;
   label: string;
+  refreshKey?: number;
   onSelect: (operacion: OperacionMaestraRecord) => void;
 };
 
 export function PendingOperationPicker({
   form,
   label,
+  refreshKey = 0,
   onSelect,
 }: PendingOperationPickerProps) {
   const [operaciones, setOperaciones] = useState<OperacionMaestraRecord[]>([]);
@@ -28,6 +30,8 @@ export function PendingOperationPicker({
 
     void (async () => {
       setIsLoading(true);
+      setSelected("");
+      setOperaciones([]);
       setErrorMessage(null);
 
       try {
@@ -53,7 +57,7 @@ export function PendingOperationPicker({
     return () => {
       active = false;
     };
-  }, [form]);
+  }, [form, refreshKey]);
 
   function handleSelect(value: string) {
     setSelected(value);
@@ -83,6 +87,8 @@ export function PendingOperationPicker({
             <option value="">
               {isLoading
                 ? "Cargando operaciones..."
+                : errorMessage
+                  ? "No fue posible consultar los pendientes. Recarga la página."
                 : operaciones.length > 0
                   ? "Selecciona una operacion o escribe manualmente abajo"
                   : "No hay operaciones pendientes para este formulario"}
@@ -102,8 +108,8 @@ export function PendingOperationPicker({
           <p className="text-xs font-semibold text-rose-600">{errorMessage}</p>
         ) : (
           <p className="text-xs text-slate-500">
-            Solo se listan operaciones nuevas creadas desde F-SU-01 y que aun
-            tengan pendiente este formulario.
+            Se muestran operaciones abiertas que cumplen las etapas anteriores
+            y tienen pendiente este formulario.
           </p>
         )}
       </div>

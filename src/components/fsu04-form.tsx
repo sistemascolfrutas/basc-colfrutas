@@ -51,6 +51,7 @@ export function Fsu04Form() {
   const [isDraftReady, setIsDraftReady] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [pendingRefresh, setPendingRefresh] = useState(0);
   const [savedRecord, setSavedRecord] = useState<Record<string, unknown> | null>(
     null,
   );
@@ -182,6 +183,7 @@ export function Fsu04Form() {
       try {
         const data = await submitFsu04(form, files);
         setSavedRecord(data);
+        setPendingRefresh((value) => value + 1);
         setMessage(
           "F-SU-04 guardado correctamente. La salida de la operacion quedo completa.",
         );
@@ -236,6 +238,7 @@ export function Fsu04Form() {
         </header>
 
         <PendingOperationPicker
+          refreshKey={pendingRefresh}
           form="fsu04"
           label="Seleccionar placa pendiente de salida"
           onSelect={(operacion) =>
@@ -244,7 +247,7 @@ export function Fsu04Form() {
                 ...current,
                 nombreOperacion: operacion.nombre_operacion,
                 tipoOperacion: operacion.tipo_operacion ?? "",
-                fechaHoraSalida: `${operacion.fecha}T${getCurrentTimeForInput()}`,
+                fechaHoraSalida: getCurrentDateTimeForInput(),
                 placaNumeroContenedor: operacion.placa,
               };
 
@@ -365,14 +368,14 @@ export function Fsu04Form() {
   );
 }
 
-function getCurrentTimeForInput() {
-  const now = new Date();
-  const hours = String(now.getHours()).padStart(2, "0");
-  const minutes = String(now.getMinutes()).padStart(2, "0");
-
-  return `${hours}:${minutes}`;
+function getCurrentDateTimeForInput() {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Bogota", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).formatToParts(new Date());
+  const value = (type: string) => parts.find((part) => part.type === type)?.value;
+  return `${value("year")}-${value("month")}-${value("day")}T${value("hour")}:${value("minute")}`;
 }
-
 async function submitFsu04(form: Fsu04Input, files: EvidenciasFsu04Input) {
   const payload = new FormData();
 

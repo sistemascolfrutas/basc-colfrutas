@@ -534,8 +534,9 @@ function FormTabs({
   const current = forms.find((form) => form.key === activeForm) ?? forms[0];
   const fields = buildSummaryFields(current.record);
   const isNotApplicable =
-    !requiresInspectionAndLoading(detail) &&
-    (current.key === "F-SU-02" || current.key === "F-SU-03");
+    (!requiresInspectionAndLoading(detail) &&
+      (current.key === "F-SU-02" || current.key === "F-SU-03" || current.key === "SELLADO")) ||
+    (current.key === "SELLADO" && detail.operacion.requiere_sellado !== true && !detail.supervision);
 
   return (
     <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white/90 shadow-[0_20px_60px_rgba(15,23,42,0.07)]">
@@ -588,7 +589,9 @@ function FormTabs({
       <div className="p-6">
         {isNotApplicable ? (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-6 text-sm font-semibold text-slate-700">
-            No aplica para este tipo de operacion.
+            {current.key === "SELLADO" && detail.operacion.requiere_sellado !== true
+              ? "La supervisión de sellado no es obligatoria para esta operación."
+              : "No aplica para este tipo de operacion."}
           </div>
         ) : !current.record ? (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-5 py-6 text-sm text-slate-600">
