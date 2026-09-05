@@ -35,6 +35,7 @@ export type Fsu04Input = {
     | (typeof PUERTAS_SELLOS_OPTIONS)[number]
     | "";
   precintoSeguridad: string;
+  precintoCorrea: string;
   observaciones: string;
 };
 
@@ -97,7 +98,7 @@ export async function createFsu04SalidaWithClient(
   }
 
   if (requiereFlujoCompleto) {
-    validateRequiredText(input.precintoSeguridad, "El precinto de seguridad");
+    validateRequiredText(input.precintoSeguridad, "El precinto de botella");
     validateImageFile(evidencias.fotoPrecintoCorrea, "Precinto de correa");
     validateImageFile(evidencias.fotoPrecintoBotella, "Precinto de botella");
     validateImageFile(evidencias.fotoOtroPrecinto, "Otro precinto", true);
@@ -124,6 +125,7 @@ export async function createFsu04SalidaWithClient(
       ? input.precintoSeguridad.trim()
       : null,
     observaciones: input.observaciones.trim() || null,
+    precinto_correa: requiereFlujoCompleto ? input.precintoCorrea?.trim() || null : null,
     ...uploadedUrls,
   };
 

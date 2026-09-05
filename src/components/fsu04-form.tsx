@@ -32,6 +32,7 @@ const initialForm: Fsu04Input = {
   placaNumeroContenedor: "",
   puertasCerradasSellosInstalados: "",
   precintoSeguridad: "",
+  precintoCorrea: "",
   observaciones: "",
 };
 
@@ -297,11 +298,20 @@ export function Fsu04Form() {
 
           {form.tipoOperacion === "Transporte de acopio a puerto" ? (
             <InputField
-              label="Precinto de seguridad"
+              label="Precinto de botella"
               value={form.precintoSeguridad}
               onChange={(value) => setField("precintoSeguridad", value)}
               placeholder="Ingresa el numero o identificacion del precinto"
               required
+            />
+          ) : null}
+
+          {form.tipoOperacion === "Transporte de acopio a puerto" ? (
+            <InputField
+              label="Precinto de correa"
+              value={form.precintoCorrea}
+              onChange={(value) => setField("precintoCorrea", value)}
+              placeholder="Ingresa el número del precinto de correa"
             />
           ) : null}
 

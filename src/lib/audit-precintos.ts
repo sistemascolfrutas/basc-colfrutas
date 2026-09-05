@@ -11,6 +11,9 @@ export type AuditPrecintoRecord = {
   id: string;
   tipo: AuditPrecintoType;
   numero_embarque?: string;
+  eliminado_en?: string | null;
+  eliminado_por?: string | null;
+  motivo_eliminacion?: string | null;
   fecha: string;
   hora: string;
   accion: string;
@@ -85,6 +88,9 @@ function mapNewTraceability(row: Record<string, unknown>): AuditPrecintoRecord {
   const salida = dispatch ? mapMovement(dispatch, false) : null;
   return {
     id: String(row.id), tipo: "trazabilidad", numero_embarque: String(row.numero_embarque ?? ""),
+    eliminado_en: row.eliminado_en ? String(row.eliminado_en) : null,
+    eliminado_por: row.eliminado_por ? String(row.eliminado_por) : null,
+    motivo_eliminacion: row.motivo_eliminacion ? String(row.motivo_eliminacion) : null,
     fecha, hora, hora_final: hora,
     accion: "Trazabilidad completa del embarque",
     empleado_colfrutas_nombre: entrada?.persona_uno_nombre ?? salida?.persona_dos_nombre ?? "Pendiente",

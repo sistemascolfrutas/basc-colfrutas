@@ -37,6 +37,7 @@ export async function POST(request: Request) {
         formData.get("puertasCerradasSellosInstalados") ?? "",
       ) as Fsu04Input["puertasCerradasSellosInstalados"],
       precintoSeguridad: String(formData.get("precintoSeguridad") ?? ""),
+      precintoCorrea: String(formData.get("precintoCorrea") ?? ""),
       observaciones: String(formData.get("observaciones") ?? ""),
     };
 
