@@ -309,7 +309,10 @@ export async function getPendingOperacionesForFormWithClient(
       p_limit: 100,
     }).returns<Array<{ datos: OperacionMaestraRecord }>>();
     if (error) throw new Error(`No fue posible consultar operaciones pendientes: ${error.message}`);
-    if (!data?.length) break;
+    if (!Array.isArray(data)) {
+      throw new Error("La consulta de operaciones pendientes no devolvió una lista válida.");
+    }
+    if (data.length === 0) break;
     operaciones.push(...data.map((row) => row.datos));
   }
   return operaciones;
