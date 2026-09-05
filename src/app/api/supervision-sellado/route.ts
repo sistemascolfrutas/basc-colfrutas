@@ -1,5 +1,7 @@
 import { getPendingOperacionesForFormWithClient } from "@/lib/operaciones-maestra";
 import { NextResponse } from "next/server";
+import { createSignedEvidenceUrl } from "@/lib/server-evidence";
+import type { SavedSelladoEvent } from "@/components/sellado-saved-event";
 import { getAuthorizedServerClient } from "@/lib/server-auth";
 import { consumeRateLimit, getClientIp } from "@/lib/rate-limit";
 import { saveSupervisionSellado, type PrecintoSelladoInput } from "@/lib/supervision-sellado";
@@ -15,7 +17,21 @@ export async function GET() {
         .select("*, supervision_sellado_eventos(*)")
         .eq("nombre_operacion", operation.nombre_operacion).maybeSingle();
       if (error) throw new Error(error.message);
-      result.push({ ...operation, supervision: data });
+      const supervision = data ? {
+        ...data,
+        supervision_sellado_eventos: await Promise.all(
+          ((data.supervision_sellado_eventos ?? []) as SavedSelladoEvent[]).map(async (event) => ({
+            ...event,
+            firma_instalador_url: await createSignedEvidenceUrl(supabase, event.firma_instalador_url, 3600),
+            firma_supervisor_url: await createSignedEvidenceUrl(supabase, event.firma_supervisor_url, 3600),
+            precintos: await Promise.all(event.precintos.map(async (seal) => ({
+              ...seal,
+              foto_url: await createSignedEvidenceUrl(supabase, seal.foto_url, 3600),
+            }))),
+          })),
+        ),
+      } : null;
+      result.push({ ...operation, supervision });
     }
     return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
