@@ -24,7 +24,7 @@ export async function createEmbarque(supabase: SupabaseClient, userId: string, n
     numero_embarque: numeroEmbarque.trim().toUpperCase(), numero_kit: numeroKit.trim().toUpperCase(),
     observaciones: observaciones.trim() || null, created_by: userId,
   }).select("*").single();
-  if (error?.code === "23505") throw new Error("El numero de embarque o el numero de kit ya esta registrado.");
+  if (error?.code === "23505") throw new Error("El numero de kit ya esta registrado. Para el mismo embarque debes usar otro kit.");
   if (error) throw new Error(`No fue posible crear el embarque: ${error.message}`);
   return data;
 }

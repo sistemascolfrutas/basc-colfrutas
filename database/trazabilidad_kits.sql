@@ -1,4 +1,4 @@
--- Nuevo flujo de trazabilidad: un embarque tiene exactamente un kit.
+-- Cada registro asigna un kit unico; el numero de embarque puede repetirse.
 -- Las tablas historicas precintos_asignaciones y precintos_salidas no se modifican.
 
 begin;
@@ -20,7 +20,8 @@ create table if not exists public.precintos_embarques (
   updated_at timestamptz not null default now()
 );
 
-create unique index if not exists precintos_embarques_numero_uq
+drop index if exists public.precintos_embarques_numero_uq;
+create index if not exists precintos_embarques_numero_idx
   on public.precintos_embarques (upper(numero_embarque));
 create unique index if not exists precintos_embarques_kit_uq
   on public.precintos_embarques (upper(numero_kit));
