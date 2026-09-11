@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 
 import {
   type AppPermission,
@@ -66,9 +67,8 @@ export async function getAuthorizedServerClient(
   };
 }
 
-export async function requireAuthorizedPageUser(
-  requiredPermission?: AppPermission,
-) {
+// Share layout/page checks within one render, never across requests or users.
+const getAuthorizedPageUser = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -86,13 +86,19 @@ export async function requireAuthorizedPageUser(
     );
   }
 
-  if (requiredPermission && !hasPermission(appUser, requiredPermission)) {
-    redirect("/");
-  }
-
   return {
     appUser,
     supabase,
     user,
   };
+});
+
+export async function requireAuthorizedPageUser(
+  requiredPermission?: AppPermission,
+) {
+  const context = await getAuthorizedPageUser();
+  if (requiredPermission && !hasPermission(context.appUser, requiredPermission)) {
+    redirect("/");
+  }
+  return context;
 }

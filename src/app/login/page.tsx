@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { AuthSubmitButton } from "@/components/auth-submit-button";
 
 import { getAppUserByAuthUserWithClient } from "@/lib/app-users";
 import { createClient } from "@/lib/supabase/server";
@@ -39,7 +40,7 @@ export default async function LoginPage({
             </h1>
           </div>
 
-          <form className="mt-6 space-y-4">
+          <form action={login} className="mt-6 space-y-4">
             <Field
               label="Correo"
               name="email"
@@ -61,12 +62,11 @@ export default async function LoginPage({
               </div>
             ) : null}
 
-            <button
-              formAction={login}
-              className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 text-sm font-semibold text-white transition hover:bg-emerald-700"
-            >
-              Ingresar
-            </button>
+            <AuthSubmitButton
+              label="Ingresar"
+              pendingLabel="Ingresando..."
+              className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-5 py-4 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+            />
           </form>
         </section>
       </main>
